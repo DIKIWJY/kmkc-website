@@ -1,11 +1,14 @@
 "use server";
 
+import { cleanWaUrl } from "@/lib/whatsapp";
+import { isGoogleFormUrl } from "@/lib/gform";
+import { parseRupiah } from "@/lib/money";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { requireAdmin } from "./guard";
 import { RESOURCES, ADMIN_PATH, type Resource } from "./schema";
 import { createServerSupabase } from "@/lib/supabase/server";
-import { isSupabaseConfigured, MEDIA_BUCKET } from "@/lib/supabase/env";
+import { isSupabaseConfigured, MEDIA_BUCKET, PROOF_BUCKET } from "@/lib/supabase/env";
 import { slugify } from "@/lib/slug";
 
 type Result<T = object> = ({ ok: true } & T) | { ok: false; error: string };
@@ -35,6 +38,8 @@ function sanitize(res: Resource, raw: Raw): { values: Record<string, unknown> } 
     const v = raw[f.name];
     const err = (msg: string) => ({ error: `${f.label}: ${msg}` });
     switch (f.type) {
+      case "proof":
+        break; // hanya-baca: diunggah pendaftar, tidak diubah lewat form admin
       case "toggle":
         values[f.name] = v === true || v === "true";
         break;
@@ -194,6 +199,11 @@ export async function deleteRecord(key: string, id: string): Promise<Result> {
 
   const files = res.imageFields.map((f) => storagePathFromUrl((row as Raw | null)?.[f])).filter(Boolean) as string[];
   if (files.length) await supabase.storage.from(MEDIA_BUCKET).remove(files);
+  // Bukti follow milik pendaftar ikut dihapus agar ruang penyimpanan tidak terbuang.
+  if (res.key === "registrations") {
+    const proofs = [String((row as Raw | null)?.follow_proof ?? ""), String((row as Raw | null)?.payment_proof ?? "")].filter(Boolean);
+    if (proofs.length) await supabase.storage.from(PROOF_BUCKET).remove(proofs);
+  }
 
   await audit(supabase, email, "menghapus", res.singular, String((row as Raw | null)?.[res.labelField] ?? ""));
   refresh(res.revalidate);
@@ -251,8 +261,16 @@ export async function saveSettings(raw: Raw): Promise<Result> {
     social[k] = v;
   }
 
-  let wa = str("whatsapp", 30).replace(/[^\d]/g, "");
-  if (wa.startsWith("0")) wa = "62" + wa.slice(1);
+  // WhatsApp: nomor (0812… → 62812…) atau tautan resmi wa.me / api.whatsapp.com
+  const waRaw = str("whatsapp", 200);
+  let wa: string;
+  if (/^https?:\/\//i.test(waRaw)) {
+    wa = cleanWaUrl(waRaw);
+    if (!wa) return { ok: false, error: "Tautan WhatsApp harus berupa https://wa.me/… atau https://api.whatsapp.com/…" };
+  } else {
+    wa = waRaw.replace(/[^\d]/g, "");
+    if (wa.startsWith("0")) wa = "62" + wa.slice(1);
+  }
 
   const em = str("email", 200);
   if (em && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(em)) return { ok: false, error: "Format email tidak valid." };
@@ -290,7 +308,19 @@ export async function saveSettings(raw: Raw): Promise<Result> {
   const name = str("name", 40);
   if (!name) return { ok: false, error: "Nama singkat organisasi wajib diisi." };
 
-  const { data: old } = await supabase.from("site_settings").select("about_photo").eq("id", 1).maybeSingle();
+  const mode = raw.registration_mode === "gform" ? "gform" : "builtin";
+  const gform = str("gform_url", 500);
+  if (gform && !isGoogleFormUrl(gform)) return { ok: false, error: "Tautan Google Form harus berupa tautan docs.google.com/forms/… atau forms.gle/…" };
+  if (mode === "gform" && !gform) return { ok: false, error: "Mode Google Form dipilih, tetapi tautan Google Form belum diisi." };
+
+  // HTM: nominal rupiah (0 = tanpa HTM). Bila ada HTM, pendaftar perlu tahu ke mana membayar.
+  const fee = parseRupiah(raw.registration_fee);
+  const payInfo = String(raw.payment_info ?? "").replace(/[ \t]+/g, " ").trim().slice(0, 600);
+  const payQr = str("payment_qr", 600);
+  if (payQr && !isHttpsUrl(payQr)) return { ok: false, error: "URL gambar QRIS tidak valid." };
+  if (fee > 0 && mode === "builtin" && !payInfo && !payQr) return { ok: false, error: "HTM sudah diisi, tetapi petunjuk pembayaran (rekening / QRIS) belum. Isi salah satunya agar pendaftar tahu ke mana membayar." };
+
+  const { data: old } = await supabase.from("site_settings").select("about_photo,payment_qr").eq("id", 1).maybeSingle();
 
   const { error } = await supabase.from("site_settings").upsert({
     id: 1,
@@ -310,16 +340,52 @@ export async function saveSettings(raw: Raw): Promise<Result> {
     history: str("history", 5000),
     founders,
     timeline,
+    registration_open: raw.registration_open !== false && raw.registration_open !== "false",
+    registration_mode: mode,
+    gform_url: gform,
+    registration_note: str("registration_note", 300),
+    registration_fee: fee,
+    payment_info: payInfo,
+    payment_qr: payQr,
     updated_at: new Date().toISOString(),
   });
   if (error) return { ok: false, error: friendly(error) };
 
   const oldPath = storagePathFromUrl((old as Raw | null)?.about_photo);
   if (oldPath && (old as Raw).about_photo !== photo) await supabase.storage.from(MEDIA_BUCKET).remove([oldPath]);
+  const oldQr = storagePathFromUrl((old as Raw | null)?.payment_qr);
+  if (oldQr && (old as Raw).payment_qr !== payQr) await supabase.storage.from(MEDIA_BUCKET).remove([oldQr]);
 
   await audit(supabase, email, "mengubah", "Pengaturan", "informasi organisasi");
   revalidatePath("/", "layout");
   return { ok: true };
+}
+
+/* ----------------------------------------------------- arsip */
+
+/** Hapus berkas bukti follow milik pendaftar yang masuk lebih dari N hari lalu (setelah diarsipkan ke PDF). */
+export async function purgeOldProofs(days: number): Promise<{ ok: true; removed: number } | { ok: false; error: string }> {
+  const { supabase, email } = await requireAdmin();
+  if (![30, 90, 180, 365].includes(days)) return { ok: false, error: "Rentang tidak valid." };
+  const cutoff = new Date(Date.now() - days * 86400000).toISOString();
+  const { data, error } = await supabase.from("registrations").select("id,follow_proof").lt("created_at", cutoff).neq("follow_proof", "").limit(2000);
+  if (error) return { ok: false, error: friendly(error) };
+  const rows = (data ?? []) as { id: string; follow_proof: string }[];
+  if (!rows.length) return { ok: true, removed: 0 };
+
+  let removed = 0;
+  for (let i = 0; i < rows.length; i += 100) {
+    const batch = rows.slice(i, i + 100);
+    const { error: rmErr } = await supabase.storage.from(PROOF_BUCKET).remove(batch.map((r) => r.follow_proof));
+    if (rmErr) return { ok: false, error: "Gagal menghapus sebagian berkas. Coba lagi." };
+    const { error: upErr } = await supabase.from("registrations").update({ follow_proof: "" }).in("id", batch.map((r) => r.id));
+    if (upErr) return { ok: false, error: friendly(upErr) };
+    removed += batch.length;
+  }
+  await audit(supabase, email, "menghapus", "Bukti follow", `${removed} berkas lebih dari ${days} hari`);
+  revalidatePath("/admin/arsip");
+  revalidatePath("/admin/pendaftar");
+  return { ok: true, removed };
 }
 
 /* ----------------------------------------------------- pencarian global */
@@ -361,6 +427,7 @@ export async function searchAdmin(query: string): Promise<SearchHit[]> {
 
 function friendly(error: { code?: string; message?: string } | null | undefined): string {
   if (!error) return "Terjadi kesalahan.";
+  if (error.code === "PGRST204" || error.code === "42703" || /column .* does not exist|Could not find the .* column/i.test(error.message ?? "")) return "Database belum diperbarui. Jalankan ulang seluruh supabase/schema.sql di SQL Editor Supabase (aman diulang), lalu coba lagi.";
   if (error.code === "23505") return "Data dengan nilai tersebut sudah ada (mis. slug kembar).";
   if (error.code === "42501") return "Akses ditolak. Pastikan akunmu terdaftar di tabel admins.";
   if (error.code === "23514") return "Ada isian yang tidak memenuhi aturan database.";

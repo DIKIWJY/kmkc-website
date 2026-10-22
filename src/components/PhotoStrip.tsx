@@ -10,11 +10,11 @@ export default function PhotoStrip({ photos }: { photos: string[] }) {
 
   return (
     <div className="relative z-10 w-full max-w-[1500px] mx-auto px-4 sm:px-8 mt-14 sm:mt-20" aria-hidden>
-      <ul className="flex justify-center items-stretch">
+      <ul data-stagger="110" className="flex justify-center items-stretch">
         {list.map((src, i) => (
           <li
             key={i}
-            className="photo-cut group relative h-36 sm:h-48 lg:h-60 shrink-0 overflow-hidden"
+            data-a="up" className="photo-cut group relative h-36 sm:h-48 lg:h-60 shrink-0 overflow-hidden"
           >
             <Photo src={src} alt="" sizes="(max-width: 768px) 34vw, 20vw" className="grayscale group-hover:grayscale-0 md:group-hover:scale-105 transition duration-700" />
             <span className="absolute inset-0 bg-[#0b3a85]/25 group-hover:opacity-0 transition-opacity duration-700" />

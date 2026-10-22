@@ -58,6 +58,13 @@ export function renderMarkdown(src: string): React.ReactNode {
         </ol>
       );
     }
+    if (lines.every((l) => /^\s*>\s?/.test(l))) {
+      return (
+        <blockquote key={i} className="article-quote">
+          {inline(lines.map((l) => l.replace(/^\s*>\s?/, "")).join(" "))}
+        </blockquote>
+      );
+    }
     const h = /^(#{2,3})\s+(.*)$/.exec(block);
     if (h) {
       return h[1] === "##" ? (

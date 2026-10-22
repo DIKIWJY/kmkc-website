@@ -1,5 +1,3 @@
-"use client";
-
 import Photo from "@/components/ui/Photo";
 import { Megaphone, Sprout, Award, ImageIcon } from "lucide-react";
 import SectionHeading from "@/components/ui/SectionHeading";
@@ -9,6 +7,7 @@ interface AboutProps {
   about: string;
   photo?: string;
   name: string;
+  page?: boolean;
 }
 
 const values = [
@@ -17,18 +16,18 @@ const values = [
   { icon: Award, title: "Prestasi & Tumbuh", desc: "Mendorong anggota berprestasi, terus belajar, dan berkembang bersama." },
 ];
 
-export default function About({ about, photo, name }: AboutProps) {
+export default function About({ about, photo, name, page }: AboutProps) {
   const paragraphs = about.split("\n\n");
   return (
-    <section id="about" className="py-24 lg:py-32">
+    <section className="py-24 lg:py-32">
       <div className="max-w-7xl mx-auto px-6 sm:px-10">
-        <SectionHeading title="Siapa Kami" className="mb-14 lg:mb-20" />
+        <SectionHeading title="Siapa Kami" className="mb-14 lg:mb-20" page={page} href="/tentang" hrefLabel="Selengkapnya" />
 
         <div className="grid lg:grid-cols-[1.05fr_1fr] gap-12 lg:gap-20 items-center mb-20 lg:mb-28">
           {/* photo */}
-          <div className="reveal relative">
-            <div className="absolute -inset-4 rounded-[2rem] bg-brand-gradient opacity-15 blur-2xl" />
-            <div className="relative aspect-[3/2] rounded-[1.6rem] overflow-hidden shadow-[0_30px_70px_-24px_rgba(30,79,163,0.45)]">
+          <div className="relative">
+            <div data-px="0.07" className="absolute -inset-4 rounded-[2rem] bg-brand-gradient opacity-15 blur-2xl" />
+            <div data-a="clip" className="relative aspect-[3/2] rounded-[1.6rem] overflow-hidden shadow-[0_30px_70px_-24px_rgba(30,79,163,0.45)]">
               {photo ? (
                 <Photo src={photo} alt={`Keluarga ${name}`} sizes="(max-width: 1024px) 100vw, 600px" />
               ) : (
@@ -49,26 +48,26 @@ export default function About({ about, photo, name }: AboutProps) {
           </div>
 
           {/* text */}
-          <div className="reveal">
-            <h3 className="text-3xl sm:text-4xl font-extrabold text-neutral-900 leading-tight mb-6">
+          <div data-stagger="110">
+            <h3 data-a="up" className="text-3xl sm:text-4xl font-extrabold text-neutral-900 leading-tight mb-6">
               Keluarga Mahasiswa{" "}
               <span className="text-gradient">Kecamatan Cempaka</span>
             </h3>
             <div className="space-y-5 text-[17px] leading-[1.8] text-neutral-500">
               {paragraphs.map((p, i) => (
-                <p key={i}>{renderBold(p)}</p>
+                <p key={i} data-a="up">{renderBold(p)}</p>
               ))}
             </div>
           </div>
         </div>
 
         {/* 3 value cards */}
-        <div className="grid md:grid-cols-3 md:divide-x divide-border">
+        <div data-stagger="140" className="grid md:grid-cols-3 md:divide-x divide-border">
           {values.map((v, i) => {
             const Icon = v.icon;
             return (
-              <div key={i} className="reveal px-0 md:px-10 first:md:pl-0 last:md:pr-0 py-8 md:py-2">
-                <Icon size={34} strokeWidth={1.5} className="text-accent mb-5" />
+              <div key={i} data-a="up" className="px-0 md:px-10 first:md:pl-0 last:md:pr-0 py-8 md:py-2">
+                <Icon size={34} strokeWidth={1.5} className="text-accent mb-5 transition-transform duration-500 hover:rotate-[-8deg] hover:scale-110" />
                 <h4 className="text-xl font-bold text-neutral-900 mb-3">{v.title}</h4>
                 <p className="text-neutral-500 leading-relaxed">{v.desc}</p>
               </div>

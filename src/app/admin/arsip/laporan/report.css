@@ -1,0 +1,105 @@
+/* Laporan arsip: tampilan lembar A4 di layar, dan tata letak cetak yang rapi untuk PDF. */
+.rpt-wrap { background: #e9e9ed; min-height: 100dvh; padding: 0 0 48px; }
+.rpt-bar { position: sticky; top: 0; z-index: 10; display: flex; align-items: center; gap: 12px; padding: 10px 16px; background: rgba(245,245,247,.88); backdrop-filter: saturate(180%) blur(20px); border-bottom: 1px solid rgba(0,0,0,.08); }
+.rpt { max-width: 210mm; margin: 24px auto 0; background: #fff; color: #1d1d1f; padding: 18mm 16mm; box-shadow: 0 1px 3px rgba(0,0,0,.12), 0 12px 40px rgba(0,0,0,.08); font-size: 10pt; line-height: 1.5; }
+@media (max-width: 800px) { .rpt { margin: 0; padding: 20px 16px; box-shadow: none; } }
+
+.rpt h1, .rpt h2, .rpt h3, .rpt h4 { font-family: inherit; color: #1d1d1f; }
+.rpt .cover { min-height: 245mm; display: flex; flex-direction: column; }
+.rpt .cover-mark { margin-top: 18mm; }
+.rpt .cover-kicker { margin-top: 34mm; font-size: 10pt; font-weight: 600; letter-spacing: .18em; text-transform: uppercase; color: #0071e3; }
+.rpt .cover h1 { margin-top: 6mm; font-size: 34pt; line-height: 1.06; font-weight: 700; letter-spacing: -.03em; }
+.rpt .cover-org { margin-top: 5mm; font-size: 13pt; color: #424245; }
+.rpt .cover-meta { margin-top: auto; border-top: 1.5px solid #1d1d1f; padding-top: 6mm; display: grid; grid-template-columns: 34mm 1fr; row-gap: 2.2mm; font-size: 9.5pt; }
+.rpt .cover-meta dt { color: #6e6e73; }
+.rpt .toc { margin-top: 12mm; }
+.rpt .toc h2 { font-size: 11pt; font-weight: 600; margin-bottom: 3mm; }
+.rpt .toc li { display: flex; align-items: baseline; gap: 3mm; padding: 1.6mm 0; border-bottom: .5px solid #d2d2d7; font-size: 10pt; }
+.rpt .toc li .n { width: 6mm; color: #0071e3; font-weight: 600; }
+.rpt .toc li .c { margin-left: auto; color: #6e6e73; font-size: 9pt; }
+
+.rpt section.sec { margin-top: 12mm; }
+.rpt section.sec.pg { break-before: page; margin-top: 0; }
+.rpt section.sec:first-of-type { margin-top: 0; }
+.rpt .sec-head { display: flex; align-items: baseline; gap: 4mm; border-bottom: 1.5px solid #1d1d1f; padding-bottom: 3mm; margin-bottom: 5mm; break-after: avoid; }
+.rpt .sec-head .n { color: #0071e3; font-weight: 700; font-size: 13pt; }
+.rpt .sec-head h2 { font-size: 18pt; font-weight: 700; letter-spacing: -.02em; }
+.rpt .sec-head .c { margin-left: auto; color: #6e6e73; font-size: 9pt; white-space: nowrap; }
+.rpt h3.sub { margin: 6mm 0 2.5mm; font-size: 11pt; font-weight: 600; break-after: avoid; }
+.rpt .empty { color: #86868b; font-style: italic; padding: 6mm 0; }
+
+.rpt table { width: 100%; border-collapse: collapse; font-size: 9pt; }
+.rpt thead { display: table-header-group; }
+.rpt th { text-align: left; font-weight: 600; font-size: 8pt; color: #6e6e73; padding: 2mm 2mm; border-bottom: 1px solid #1d1d1f; white-space: nowrap; }
+.rpt td { padding: 2.2mm 2mm; border-bottom: .5px solid #d2d2d7; vertical-align: top; overflow-wrap: anywhere; }
+.rpt tr { break-inside: avoid; }
+.rpt td.num, .rpt th.num { width: 8mm; color: #86868b; }
+.rpt td .muted { color: #6e6e73; }
+
+.rpt dl.kv { display: grid; grid-template-columns: 38mm 1fr; row-gap: 2.2mm; font-size: 9.5pt; }
+.rpt dl.kv dt { color: #6e6e73; }
+.rpt dl.kv dd { overflow-wrap: anywhere; }
+.rpt .prose p { margin: 0 0 2.4mm; overflow-wrap: anywhere; }
+.rpt .box { background: #f5f5f7; border-radius: 3mm; padding: 4mm 5mm; margin-bottom: 4mm; }
+
+.rpt .tag { display: inline-block; padding: .3mm 2mm; border-radius: 99px; background: #eef5fd; color: #0058b0; font-size: 7.5pt; font-weight: 600; white-space: nowrap; }
+.rpt .tag.gray { background: #f0f0f2; color: #424245; }
+
+.rpt article.item { break-inside: avoid; border-bottom: .5px solid #d2d2d7; padding: 4mm 0; }
+.rpt article.item:first-of-type { border-top: 1px solid #1d1d1f; }
+.rpt .reg { display: grid; grid-template-columns: 1fr 44mm; gap: 6mm; }
+.rpt .reg.no-proof { grid-template-columns: 1fr; }
+.rpt .reg h4 { font-size: 11pt; font-weight: 600; display: flex; gap: 2.5mm; align-items: center; flex-wrap: wrap; }
+.rpt .reg dl { margin-top: 2mm; display: grid; grid-template-columns: 24mm 1fr; row-gap: 1mm; font-size: 9pt; }
+.rpt .reg dl dt { color: #6e6e73; }
+.rpt .reg .reason { margin-top: 2.5mm; font-size: 9.5pt; overflow-wrap: anywhere; }
+.rpt .reg .reason b { display: block; font-size: 8pt; color: #6e6e73; font-weight: 600; margin-bottom: .6mm; }
+.rpt .proof { width: 44mm; }
+.rpt .proof img { width: 100%; max-height: 78mm; object-fit: contain; object-position: top; border: .5px solid #d2d2d7; border-radius: 2mm; background: #fafafa; }
+.rpt .proof span { display: block; margin-top: 1mm; font-size: 7pt; color: #86868b; }
+.rpt .photos { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4mm; margin-top: 4mm; }
+.rpt .photos figure { break-inside: avoid; }
+.rpt .photos img { width: 100%; aspect-ratio: 4/3; object-fit: cover; border-radius: 2mm; }
+.rpt .photos figcaption { margin-top: 1mm; font-size: 8pt; color: #424245; }
+.rpt .kpis { display: grid; grid-template-columns: repeat(2, 1fr); gap: 5mm; margin-bottom: 5mm; }
+.rpt .kpis div { border-top: 1.5px solid #1d1d1f; padding-top: 2mm; }
+.rpt .kpis b { display: block; font-size: 22pt; font-weight: 700; letter-spacing: -.02em; }
+.rpt .kpis span { font-size: 9pt; color: #6e6e73; }
+.rpt .colophon { margin-top: 10mm; font-size: 8pt; color: #86868b; border-top: .5px solid #d2d2d7; padding-top: 3mm; }
+
+/* Laporan pendaftar */
+.rpt .kpis.k4 { grid-template-columns: repeat(4, 1fr); }
+.rpt .kpis.k4 b { font-size: 20pt; }
+.rpt table.bars td { vertical-align: middle; }
+.rpt table.bars .bar { display: block; height: 2.2mm; border-radius: 99px; background: #eef5fd; overflow: hidden; }
+.rpt table.bars .bar i { display: block; height: 100%; border-radius: 99px; background: #0071e3; }
+.rpt .grp + .grp { margin-top: 8mm; }
+.rpt .grp-h { display: flex; align-items: baseline; gap: 3mm; margin: 0 0 2mm; padding: 2mm 3mm; background: #f5f5f7; border-radius: 2mm; font-size: 11pt; font-weight: 600; break-after: avoid; }
+.rpt .grp-h span { margin-left: auto; font-size: 8.5pt; font-weight: 500; color: #6e6e73; }
+.rpt table.rek tbody.one { break-inside: avoid; }
+.rpt table.rek tbody.one td { border-bottom: 0; }
+.rpt table.rek tbody.one tr:last-child td { border-bottom: .5px solid #d2d2d7; }
+.rpt table.rek tr.why td { padding-top: 0; font-size: 9pt; color: #424245; }
+.rpt table.rek tr.why p { margin: 0; overflow-wrap: anywhere; }
+.rpt table.rek tr.why p + p { margin-top: 1mm; }
+.rpt table.rek tr.why b { color: #6e6e73; font-weight: 600; font-size: 8pt; margin-right: 1.5mm; }
+.rpt .end { break-inside: avoid; }
+.rpt .sign { margin-top: 10mm; }
+.rpt .sign > p { font-size: 9.5pt; color: #424245; }
+.rpt .sign > div { display: grid; grid-template-columns: 1fr 1fr; gap: 20mm; margin-top: 6mm; }
+.rpt .sign > div > div { display: flex; flex-direction: column; font-size: 9.5pt; }
+.rpt .sign span { color: #6e6e73; }
+.rpt .sign b { font-weight: 600; }
+.rpt .sign i { display: block; height: 20mm; border-bottom: 1px solid #1d1d1f; }
+.rpt .sign small { margin-top: 1mm; color: #86868b; font-size: 7.5pt; }
+
+@page { size: A4; margin: 18mm 16mm 20mm; @bottom-left { content: "Arsip data · KMKC"; font: 8pt "Inter Variable", system-ui, sans-serif; color: #86868b; } @bottom-right { content: "Halaman " counter(page) " dari " counter(pages); font: 8pt "Inter Variable", system-ui, sans-serif; color: #86868b; } }
+@page :first { @bottom-left { content: none; } @bottom-right { content: none; } }
+
+@media print {
+  html, body, .adm, .rpt-wrap { background: #fff !important; min-height: 0 !important; padding: 0 !important; margin: 0 !important; }
+  .rpt-bar { display: none !important; }
+  .rpt { max-width: none; margin: 0; padding: 0; box-shadow: none; }
+  .rpt .cover { min-height: 255mm; break-after: page; }
+  * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+}

@@ -1,86 +1,106 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import Logo from "@/components/ui/Logo";
 import { Menu, X } from "lucide-react";
+import { MAIN_NAV, MORE_NAV } from "@/lib/routes";
 
-const mainLinks = [
-  { href: "#about", label: "Tentang Kami" },
-  { href: "#program", label: "Program" },
-  { href: "#gallery", label: "Galeri" },
-  { href: "#kepengurusan", label: "Struktur" },
-  { href: "#kontak", label: "Kontak" },
-];
+const isActive = (path: string, href: string) => (href === "/" ? path === "/" : path === href || path.startsWith(href + "/"));
 
-const allLinks = [
-  { href: "#about", label: "Tentang Kami" },
-  { href: "#sejarah", label: "Sejarah" },
-  { href: "#visi-misi", label: "Visi & Misi" },
-  { href: "#kepengurusan", label: "Kepengurusan" },
-  { href: "#program", label: "Program Kerja" },
-  { href: "#agenda", label: "Agenda" },
-  { href: "#gallery", label: "Galeri Kegiatan" },
-  { href: "#berita", label: "Berita & Artikel" },
-  { href: "#kontak", label: "Hubungi Kami" },
-  { href: "/daftar", label: "Daftar Anggota" },
-];
+export default function Navbar({ name = "KMKC" }: { name?: string }) {
+  const path = usePathname();
+  // Menu seluler terikat ke halaman tempat ia dibuka: berpindah halaman otomatis menutupnya.
+  const [openAt, setOpenAt] = useState<string | null>(null);
+  const open = openAt === path;
+  const setOpen = (v: boolean) => setOpenAt(v ? path : null);
+  const close = () => setOpenAt(null);
 
-export default function Navbar({ name = "KMKC", home = false }: { name?: string; home?: boolean }) {
-  const prefix = home ? "/" : "";
-  const [open, setOpen] = useState(false);
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && setOpenAt(null);
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [open]);
 
   return (
-    <nav className="fixed top-0 left-0 right-0 z-50 px-4 sm:px-6 pt-4">
-      {/* big floating white pill */}
-      <div className="max-w-6xl mx-auto rounded-full bg-white/95 backdrop-blur-xl shadow-[0_12px_40px_-12px_rgba(15,42,92,0.35)] ring-1 ring-black/5">
-        <div className="flex items-center justify-between h-16 lg:h-[72px] pl-6 pr-4 lg:pl-10 lg:pr-8">
-          <Link href="/" prefetch={false} className="shrink-0 -my-1 transition-transform hover:scale-105" aria-label={`${name} — beranda`}>
-            <Logo size={64} priority alt="" className="w-12 h-12 lg:w-[60px] lg:h-[60px]" />
+    <nav className="fixed top-0 left-0 right-0 z-50 px-3 sm:px-6 pt-3 sm:pt-4" aria-label="Navigasi utama">
+      <div className="max-w-6xl mx-auto rounded-full bg-white/90 backdrop-blur-xl shadow-[0_10px_34px_-14px_rgba(15,42,92,0.35)] ring-1 ring-black/5">
+        <div className="flex items-center justify-between h-14 sm:h-16 lg:h-[68px] pl-4 pr-2.5 sm:pl-6 sm:pr-3 lg:pl-8 lg:pr-4">
+          <Link href="/" className="shrink-0 -my-1 transition-transform hover:scale-105" aria-label={`${name} — beranda`}>
+            <Logo size={56} priority alt="" className="w-10 h-10 sm:w-12 sm:h-12 lg:w-[54px] lg:h-[54px]" />
           </Link>
 
-          <div className="hidden lg:flex items-center gap-9">
-            {mainLinks.map((l) => (
-              <a
-                key={l.href}
-                href={l.href.startsWith("/") ? l.href : prefix + l.href}
-                className="relative text-[15px] font-medium text-neutral-800 hover:text-accent transition-colors after:absolute after:left-0 after:-bottom-1 after:h-0.5 after:w-0 after:bg-accent after:transition-all hover:after:w-full"
-              >
-                {l.label}
-              </a>
-            ))}
-          </div>
+          <ul className="hidden xl:flex items-center gap-1">
+            {MAIN_NAV.map((l) => {
+              const on = isActive(path, l.href);
+              return (
+                <li key={l.href}>
+                  <Link
+                    href={l.href}
+                    aria-current={on ? "page" : undefined}
+                    className={`relative inline-flex h-10 items-center px-3.5 rounded-full text-[14.5px] font-medium transition-colors ${
+                      on ? "text-primary bg-primary/[0.07]" : "text-neutral-700 hover:text-primary hover:bg-black/[0.04]"
+                    }`}
+                  >
+                    {l.label}
+                  </Link>
+                </li>
+              );
+            })}
+          </ul>
 
-          <div className="flex items-center">
-          <Link href="/daftar" prefetch={false} className="hidden sm:inline-flex mr-2 h-10 items-center rounded-full bg-primary-dark px-5 text-sm font-semibold text-white hover:bg-primary transition-colors">
-            Gabung
-          </Link>
-          <button
-            onClick={() => setOpen(!open)}
-            aria-label="Menu"
-            className="w-11 h-11 rounded-full flex items-center justify-center text-primary-dark hover:bg-surface transition-colors"
-          >
-            {open ? <X size={26} /> : <Menu size={26} />}
-          </button>
+          <div className="flex items-center gap-1.5">
+            <Link
+              href="/daftar"
+              data-magnetic
+              className="hidden sm:inline-flex h-10 items-center rounded-full bg-primary-dark px-5 text-sm font-semibold text-white hover:bg-primary transition-colors"
+            >
+              Gabung
+            </Link>
+            <button
+              onClick={() => setOpen(!open)}
+              aria-label={open ? "Tutup menu" : "Buka menu"}
+              aria-expanded={open}
+              aria-controls="menu-situs"
+              className="xl:hidden w-11 h-11 rounded-full flex items-center justify-center text-primary-dark hover:bg-black/[0.05] transition-colors"
+            >
+              {open ? <X size={24} /> : <Menu size={24} />}
+            </button>
           </div>
         </div>
       </div>
 
       {open && (
-        <div className="max-w-6xl mx-auto mt-3 rounded-3xl bg-white shadow-2xl ring-1 ring-black/5 animate-fade-in overflow-hidden">
-          <div className="grid sm:grid-cols-2 gap-1 p-3">
-            {allLinks.map((l) => (
-              <a
-                key={l.href}
-                href={l.href.startsWith("/") ? l.href : prefix + l.href}
-                onClick={() => setOpen(false)}
-                className="px-5 py-3.5 rounded-2xl text-[15px] font-medium text-neutral-800 hover:bg-surface hover:text-accent transition-colors"
-              >
-                {l.label}
-              </a>
-            ))}
+        <>
+          <button className="fixed inset-0 -z-10 bg-black/20 xl:hidden" aria-label="Tutup menu" onClick={close} tabIndex={-1} />
+          <div id="menu-situs" className="max-w-6xl mx-auto mt-2 rounded-3xl bg-white shadow-2xl ring-1 ring-black/5 animate-fade-in overflow-hidden max-h-[calc(100dvh-5.5rem)] overflow-y-auto overscroll-contain xl:hidden">
+            <ul className="grid sm:grid-cols-2 gap-0.5 p-2.5">
+              {[...MAIN_NAV, ...MORE_NAV].map((l) => {
+                const on = isActive(path, l.href);
+                return (
+                  <li key={l.href}>
+                    <Link
+                      href={l.href}
+                      aria-current={on ? "page" : undefined}
+                      className={`flex items-center h-12 px-4 rounded-2xl text-[15px] font-medium transition-colors ${
+                        on ? "bg-primary/[0.07] text-primary" : "text-neutral-800 hover:bg-black/[0.04]"
+                      }`}
+                    >
+                      {l.label}
+                    </Link>
+                  </li>
+                );
+              })}
+            </ul>
+            <div className="p-2.5 pt-0 sm:hidden">
+              <Link href="/daftar" className="flex h-12 items-center justify-center rounded-2xl bg-primary-dark text-white text-[15px] font-semibold">
+                Gabung jadi anggota
+              </Link>
+            </div>
           </div>
-        </div>
+        </>
       )}
     </nav>
   );

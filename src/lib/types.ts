@@ -9,6 +9,19 @@ export interface Member {
   created_at: string;
 }
 
+export interface Period {
+  label: string;
+  is_current: boolean;
+}
+
+export interface Division {
+  id: string;
+  period: string;
+  name: string;
+  description: string;
+  order_index: number;
+}
+
 export interface GalleryItem {
   id: string;
   title: string;
@@ -96,6 +109,16 @@ export interface SiteSettings {
   history: string;
   founders: Founder[];
   timeline: TimelineItem[];
+  registration_open: boolean;
+  registration_mode: "builtin" | "gform";
+  gform_url: string;
+  registration_note: string;
+  /** HTM dalam rupiah; 0 = tanpa HTM. */
+  registration_fee: number;
+  /** Petunjuk pembayaran (rekening / e-wallet), teks bebas. */
+  payment_info: string;
+  /** Gambar QRIS (URL media), opsional. */
+  payment_qr: string;
 }
 
 export interface ContactMessage {

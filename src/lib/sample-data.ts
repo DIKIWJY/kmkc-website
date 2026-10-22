@@ -1,4 +1,4 @@
-import type { Member, GalleryItem, Article, Program, SiteSettings, EventItem } from "./types";
+import type { Member, Division, GalleryItem, Article, Program, SiteSettings, EventItem } from "./types";
 import { addDays, todayWIB } from "./date";
 
 /* Data contoh — hanya tampil bila Supabase belum dikonfigurasi (mode pratinjau). */
@@ -23,14 +23,21 @@ export const sampleSettings: SiteSettings = {
     { value: "13", label: "Desa" },
     { value: "8", label: "Penggagas" },
   ],
-  email: "kmkc@example.com",
+  email: "kmkcjayajaya@gmail.com",
   phone: "",
-  address: "Kecamatan Cempaka",
-  instagram: "",
-  tiktok: "",
+  address: "TPA Sija Carana",
+  instagram: "https://www.instagram.com/kmkc.id",
+  tiktok: "https://www.tiktok.com/@kmkc_18",
   youtube: "",
-  whatsapp: "",
+  whatsapp: "https://wa.me/qr/VPQNDHKWIN6VC1",
   about_photo: "",
+  registration_open: true,
+  registration_mode: "builtin",
+  gform_url: "",
+  registration_note: "",
+  registration_fee: 0,
+  payment_info: "",
+  payment_qr: "",
   history:
     "**KMKC** dilahirkan pada **Musyawarah Besar perdana** tanggal **27 Januari 2008** di Taman Bacaan Masyarakat Desa Cempaka, dihadiri tidak kurang dari **50 mahasiswa** dari **13 desa** di Kecamatan Cempaka. Berawal dari obrolan ringan para mahasiswa di perantauan, lahirlah rumah bersama yang terus tumbuh hingga hari ini.",
   founders: [
@@ -56,15 +63,23 @@ const m = (i: number, name: string, position: string, division: string): Member 
   id: String(i), name, position, division, photo_url: "", period: "2025/2026", order_index: i, created_at: "",
 });
 
+export const sampleDivisions: Division[] = ["Presidium", "Departemen Pendidikan", "Departemen PKMB", "Departemen Humas", "Departemen Medinfo", "Departemen Kewirausahaan", "Departemen Kesehatan"].map((name, i) => ({
+  id: `d${i}`, period: "2025/2026", name, description: "", order_index: i + 1,
+}));
+
 export const sampleMembers: Member[] = [
-  m(1, "Nama Ketua", "Ketua Umum", "Presidium"),
-  m(2, "Nama Wakil", "Wakil Ketua", "Presidium"),
-  m(3, "Nama Sekretaris", "Sekretaris Umum", "Presidium"),
-  m(4, "Nama Bendahara", "Bendahara Umum", "Presidium"),
-  m(5, "Nama Kabid", "Kepala Bidang", "Pendidikan & Pengembangan Diri"),
-  m(6, "Nama Kabid", "Kepala Bidang", "Sosial & Pengabdian"),
-  m(7, "Nama Kabid", "Kepala Bidang", "Hubungan Daerah & Alumni"),
-  m(8, "Nama Kabid", "Kepala Bidang", "Media & Kreatif"),
+  m(1, "Nama Ketua Umum", "Ketua Umum", "Presidium"),
+  m(2, "Nama Wakil Ketua 1", "Wakil Ketua Umum 1", "Presidium"),
+  m(3, "Nama Wakil Ketua 2", "Wakil Ketua Umum 2", "Presidium"),
+  m(4, "Nama Sekretaris 1", "Sekretaris Umum 1", "Presidium"),
+  m(5, "Nama Sekretaris 2", "Sekretaris Umum 2", "Presidium"),
+  m(6, "Nama Bendahara", "Bendahara Umum", "Presidium"),
+  m(7, "Nama Ketua Departemen", "Ketua Departemen Pendidikan", "Departemen Pendidikan"),
+  m(8, "Nama Ketua Departemen", "Ketua Departemen PKMB", "Departemen PKMB"),
+  m(9, "Nama Ketua Departemen", "Ketua Departemen Humas", "Departemen Humas"),
+  m(10, "Nama Ketua Departemen", "Ketua Departemen Medinfo", "Departemen Medinfo"),
+  m(11, "Nama Ketua Departemen", "Ketua Departemen Kewirausahaan", "Departemen Kewirausahaan"),
+  m(12, "Nama Ketua Departemen", "Ketua Departemen Kesehatan", "Departemen Kesehatan"),
 ];
 
 const p = (i: number, name: string, description: string, icon: string, division: string, status: Program["status"]): Program => ({
@@ -129,5 +144,19 @@ export function sampleEvents(): EventItem[] {
     e(2, 23, "Bakti Sosial & Gotong Royong", "Aksi bersih lingkungan dan bakti sosial bersama warga dan karang taruna.", "07.30 WIB", "Desa Cempaka"),
     e(3, 41, "Seminar Beasiswa & Karier", "Berbagi pengalaman meraih beasiswa dan membangun karier bersama alumni KMKC.", "13.00 WIB", "Online via Zoom"),
     e(4, 66, "Malam Keakraban KMKC", "Malam kebersamaan seluruh keluarga besar KMKC.", "19.00 WIB", "Taman Bacaan Masyarakat"),
+  ];
+}
+
+/** Agenda contoh yang sudah lewat (untuk daftar "Telah berlalu" di /agenda). */
+export function samplePastEvents(): EventItem[] {
+  const t = todayWIB();
+  const e = (i: number, offset: number, title: string, description: string, time: string, location: string): EventItem => ({
+    id: `pv${i}`, title, description, location, event_date: addDays(t, offset), event_time: time, cover_image: "", link: "", created_at: "",
+  });
+  return [
+    e(1, -21, "Penyambutan Mahasiswa Baru", "Menyambut keluarga baru KMKC di perantauan.", "09.00 WIB", "Aula Kecamatan Cempaka"),
+    e(2, -48, "Turnamen Persahabatan Antar Angkatan", "Pertandingan olahraga untuk mempererat kebersamaan.", "08.00 WIB", "Lapangan Desa Cempaka"),
+    e(3, -75, "Talkshow Alumni", "Diskusi dunia kerja bersama alumni KMKC.", "13.00 WIB", "Online via Zoom"),
+    e(4, -110, "Pelantikan Pengurus", "Pelantikan pengurus baru periode berjalan.", "10.00 WIB", "Taman Bacaan Masyarakat"),
   ];
 }

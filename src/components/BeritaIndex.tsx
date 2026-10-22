@@ -1,87 +1,103 @@
 "use client";
 
 import Photo from "@/components/ui/Photo";
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import Link from "next/link";
-import { Search, ImageIcon, Clock, ArrowUpRight } from "lucide-react";
+import { Search, ArrowUpRight } from "lucide-react";
 import type { Article } from "@/lib/types";
+import NewsRow, { fmtDate } from "@/components/news/NewsRow";
+import Pagination, { usePaged } from "@/components/ui/Pagination";
 
-const fmt = (d: string | null) => (d ? new Date(`${d.slice(0, 10)}T00:00:00Z`).toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric", timeZone: "UTC" }) : "");
-
-const gradients = [
-  "linear-gradient(135deg,#1d4ed8,#0ea5e9)",
-  "linear-gradient(135deg,#0ea5e9,#06b6d4)",
-  "linear-gradient(135deg,#1e4fa3,#4ea8ff)",
-];
+const PAGE = 8; // berita per halaman (kartu utama hanya di halaman 1)
 
 export default function BeritaIndex({ articles }: { articles: Article[] }) {
   const [q, setQ] = useState("");
   const [cat, setCat] = useState("Semua");
 
   const categories = useMemo(() => ["Semua", ...Array.from(new Set(articles.map((a) => a.category).filter(Boolean)))], [articles]);
+  const filtering = q.trim() !== "" || cat !== "Semua";
   const list = useMemo(() => {
     const needle = q.trim().toLowerCase();
-    return articles.filter(
-      (a) => (cat === "Semua" || a.category === cat) && (!needle || `${a.title} ${a.excerpt} ${a.author}`.toLowerCase().includes(needle))
-    );
+    return articles.filter((a) => (cat === "Semua" || a.category === cat) && (!needle || `${a.title} ${a.excerpt} ${a.author}`.toLowerCase().includes(needle)));
   }, [articles, q, cat]);
+
+  const leadItem = !filtering ? list[0] : undefined;
+  const rest = leadItem ? list.slice(1) : list;
+  const anchor = useRef<HTMLDivElement>(null);
+  const p = usePaged(rest.length, PAGE, anchor);
+  const lead = p.page === 1 ? leadItem : undefined; // kartu utama hanya di halaman pertama
+  const visible = rest.slice(p.start, p.end);
 
   return (
     <>
-      <div className="flex flex-col md:flex-row md:items-center gap-4 mb-10">
-        <div className="relative flex-1 max-w-md">
-          <Search size={17} className="absolute left-4 top-1/2 -translate-y-1/2 text-neutral-400" />
-          <input
-            type="search"
-            value={q}
-            onChange={(e) => setQ(e.target.value)}
-            placeholder="Cari berita…"
-            aria-label="Cari berita"
-            className="w-full pl-11 pr-4 py-3 rounded-full bg-white ring-1 ring-border text-sm focus:outline-none focus:ring-2 focus:ring-accent/40"
-          />
-        </div>
-        <div className="flex flex-wrap gap-2" role="group" aria-label="Filter kategori">
+      {/* Kontrol: tab kategori bergaris bawah + pencarian */}
+      <div className="flex flex-col gap-4 border-b border-black/10 md:flex-row md:items-end md:justify-between">
+        <div className="-mb-px flex gap-1 overflow-x-auto [scrollbar-width:none]" role="group" aria-label="Filter kategori">
           {categories.map((c) => (
             <button
               key={c}
               type="button"
-              onClick={() => setCat(c)}
+              onClick={() => { setCat(c); p.reset(); }}
               aria-pressed={cat === c}
-              className={`px-4 py-2 rounded-full text-sm font-semibold transition ${cat === c ? "bg-brand-gradient text-white shadow-md shadow-blue-500/25" : "bg-white ring-1 ring-border text-neutral-600 hover:text-primary"}`}
+              className={`h-12 shrink-0 border-b-2 px-4 text-[15px] font-semibold transition-colors ${cat === c ? "border-accent text-primary-dark" : "border-transparent text-neutral-500 hover:text-primary-dark"}`}
             >
               {c}
             </button>
           ))}
         </div>
+        <div className="relative pb-3 md:w-72 md:pb-2">
+          <Search size={17} className="absolute left-3.5 top-[calc(50%-6px)] -translate-y-1/2 text-neutral-400 md:top-[calc(50%-4px)]" />
+          <input
+            type="search"
+            value={q}
+            onChange={(e) => { setQ(e.target.value); p.reset(); }}
+            placeholder="Cari berita"
+            aria-label="Cari berita"
+            className="h-11 w-full rounded-full bg-black/[0.045] pl-10 pr-4 text-[15px] outline-none transition focus:bg-white focus:ring-2 focus:ring-accent/40"
+          />
+        </div>
       </div>
 
       {list.length === 0 ? (
-        <p className="text-center text-neutral-400 py-20">Tidak ada berita yang cocok.</p>
+        <p className="py-24 text-center text-neutral-400">Tidak ada berita yang cocok.</p>
       ) : (
-        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-7">
-          {list.map((a, i) => (
-            <Link key={a.id} href={`/berita/${a.slug}`} className="group soft-card overflow-hidden flex flex-col">
-              <div className="relative aspect-[16/10] overflow-hidden">
-                {a.cover_image ? (
-                  <Photo src={a.cover_image} alt="" sizes="(max-width: 768px) 100vw, 380px" className="group-hover:scale-[1.04] transition-transform duration-500" />
+        <>
+          {lead && (
+            <Link href={`/berita/${lead.slug}`} className="group relative mt-8 block overflow-hidden rounded-[1.75rem] bg-primary-dark sm:mt-10">
+              <div className="relative aspect-[4/5] sm:aspect-[16/9] lg:aspect-[21/9]">
+                {lead.cover_image ? (
+                  <Photo src={lead.cover_image} alt="" priority sizes="(max-width: 1280px) 100vw, 1200px" className="transition-transform duration-700 group-hover:scale-[1.03]" />
                 ) : (
-                  <div className="w-full h-full flex items-center justify-center" style={{ background: gradients[i % gradients.length] }}>
-                    <ImageIcon size={28} className="text-white/70" />
-                  </div>
+                  <div className="absolute inset-0 bg-gradient-to-br from-accent-dark via-accent to-accent-light" />
                 )}
-              </div>
-              <div className="p-6 flex-1 flex flex-col">
-                <div className="flex items-center gap-3 mb-2.5 text-[11px]">
-                  <span className="font-bold uppercase tracking-wide text-accent">{a.category}</span>
-                  <span className="text-neutral-400 inline-flex items-center gap-1"><Clock size={11} /> {fmt(a.published_at)}</span>
+                <div className="absolute inset-0 bg-gradient-to-t from-[#061431]/90 via-[#061431]/35 to-transparent" />
+                <div className="absolute inset-x-0 bottom-0 p-6 sm:p-10 lg:p-12">
+                  <p className="flex flex-wrap items-center gap-x-4 gap-y-1 text-[13px] text-white/80">
+                    {lead.category && <span className="rounded-full bg-white/15 px-3 py-1 font-semibold backdrop-blur">{lead.category}</span>}
+                    <time dateTime={lead.published_at ?? undefined}>{fmtDate(lead.published_at)}</time>
+                  </p>
+                  <h2 className="mt-4 max-w-3xl text-[1.65rem] font-extrabold leading-[1.15] tracking-tight text-white sm:text-4xl lg:text-[2.6rem]">{lead.title}</h2>
+                  {lead.excerpt && <p className="mt-3 hidden max-w-2xl text-[16px] leading-relaxed text-white/75 sm:line-clamp-2 sm:block">{lead.excerpt}</p>}
+                  <span className="mt-5 inline-flex items-center gap-1.5 text-sm font-semibold text-white">Baca berita <ArrowUpRight size={16} className="transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5" /></span>
                 </div>
-                <h3 className="font-bold text-lg text-primary-dark leading-snug group-hover:text-accent transition-colors">{a.title}</h3>
-                {a.excerpt && <p className="mt-2 text-sm text-neutral-500 leading-relaxed line-clamp-3">{a.excerpt}</p>}
-                <span className="mt-auto pt-5 inline-flex items-center gap-1 text-sm font-semibold text-accent">Baca selengkapnya <ArrowUpRight size={15} className="group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" /></span>
               </div>
             </Link>
-          ))}
-        </div>
+          )}
+
+          {visible.length > 0 && (
+            <div className="mt-10 scroll-mt-28 sm:mt-14" ref={anchor}>
+              {leadItem && <h2 className="mb-1 text-xl font-extrabold tracking-tight text-primary-dark sm:text-2xl">{p.page === 1 ? "Berita lainnya" : "Berita sebelumnya"}</h2>}
+              <ul className="grid border-t border-black/10 lg:grid-cols-2 lg:gap-x-16">
+                {visible.map((a) => (
+                  <li key={a.id} className="border-b border-black/10">
+                    <NewsRow a={a} />
+                  </li>
+                ))}
+              </ul>
+              <Pagination page={p.page} pages={p.pages} total={rest.length} size={PAGE} onChange={p.go} noun="berita" />
+            </div>
+          )}
+        </>
       )}
     </>
   );

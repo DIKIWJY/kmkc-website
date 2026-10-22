@@ -3,10 +3,12 @@
 import { useActionState, useEffect, useRef } from "react";
 import { Mail, Phone, MapPin, Send, CheckCircle2, Loader2 } from "lucide-react";
 import SectionHeading from "@/components/ui/SectionHeading";
+import { waHref } from "@/lib/whatsapp";
 import { IconInstagram, IconTiktok, IconYoutube, IconWhatsapp } from "@/components/icons/SocialIcons";
 import { sendMessage } from "@/lib/contact-action";
 
 interface KontakProps {
+  page?: boolean;
   email: string;
   phone: string;
   address: string;
@@ -19,7 +21,7 @@ interface KontakProps {
 const field =
   "w-full px-4 py-3.5 rounded-xl bg-white border border-border text-[15px] focus:outline-none focus:ring-2 focus:ring-accent/20 focus:border-accent transition-all";
 
-export default function Kontak({ email, phone, address, instagram, tiktok, youtube, whatsapp }: KontakProps) {
+export default function Kontak({ page, email, phone, address, instagram, tiktok, youtube, whatsapp }: KontakProps) {
   const [state, action, pending] = useActionState(sendMessage, undefined);
   const startedAt = useRef<HTMLInputElement>(null);
 
@@ -35,18 +37,18 @@ export default function Kontak({ email, phone, address, instagram, tiktok, youtu
   ].filter((i) => i.value);
 
   const socials = [
-    { href: whatsapp ? `https://wa.me/${whatsapp}` : "", icon: IconWhatsapp, label: "WhatsApp" },
+    { href: waHref(whatsapp), icon: IconWhatsapp, label: "WhatsApp" },
     { href: instagram, icon: IconInstagram, label: "Instagram" },
     { href: tiktok, icon: IconTiktok, label: "TikTok" },
     { href: youtube, icon: IconYoutube, label: "YouTube" },
   ].filter((s) => s.href);
 
   return (
-    <section id="kontak" className="py-24 lg:py-32 bg-surface/70">
+    <section className="py-24 lg:py-32 bg-surface/70">
       <div className="max-w-7xl mx-auto px-6 sm:px-10">
         <div className="grid lg:grid-cols-2 gap-12 lg:gap-20">
           <div>
-            <SectionHeading title="Hubungi Kami" className="mb-6" />
+            <SectionHeading title="Hubungi Kami" className="mb-6" page={page} />
             <p className="text-neutral-500 text-lg mb-10 max-w-md leading-relaxed">
               Punya pertanyaan, saran, atau ingin berkolaborasi? Kami senang mendengar dari kamu.
             </p>

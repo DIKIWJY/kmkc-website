@@ -1,12 +1,17 @@
 "use client";
 
+import Link from "next/link";
 import Photo from "@/components/ui/Photo";
 import { useEffect, useState, useCallback, useMemo, useRef } from "react";
-import { X, ChevronLeft, ChevronRight, ImageIcon } from "lucide-react";
+import { X, ChevronLeft, ChevronRight, ImageIcon, ArrowRight } from "lucide-react";
+import Pagination, { usePaged } from "@/components/ui/Pagination";
 import type { GalleryItem } from "@/lib/types";
+
+const GRID = 12; // foto per halaman pada kisi galeri
 
 interface GalleryProps {
   items: GalleryItem[];
+  page?: boolean;
 }
 
 function formatDate(dateStr: string | null) {
@@ -51,7 +56,8 @@ function Tile({ item, index, className = "" }: { item: GalleryItem; index: numbe
   );
 }
 
-export default function Gallery({ items }: GalleryProps) {
+export default function Gallery({ items, page }: GalleryProps) {
+  const Heading = page ? "h1" : "h2";
   const [filter, setFilter] = useState("all");
   const [active, setActive] = useState(0);
   const [paused, setPaused] = useState(false);
@@ -62,6 +68,8 @@ export default function Gallery({ items }: GalleryProps) {
     [items, filter]
   );
   const n = list.length;
+  const gridTop = useRef<HTMLDivElement>(null);
+  const pg = usePaged(n, GRID, gridTop);
   // Coverflow: bila admin menandai ≥3 foto "Sorotan", hanya itu yang diputar; jika tidak, kegiatan terbaru (maks. 12).
   const deck = useMemo(() => {
     const spot = list.filter((g) => g.featured);
@@ -115,26 +123,31 @@ export default function Gallery({ items }: GalleryProps) {
   if (items.length === 0) return null;
 
   return (
-    <section id="gallery" ref={sectionRef} className="py-24 lg:py-32 overflow-x-clip">
+    <section ref={sectionRef} className="py-24 lg:py-32 overflow-x-clip">
       <div className="max-w-7xl mx-auto px-6 sm:px-10">
         {/* heading tengah */}
-        <div className="text-center max-w-2xl mx-auto mb-10 reveal">
-          <h2 className="text-4xl sm:text-5xl font-extrabold">
+        <div data-a="up" className="text-center max-w-2xl mx-auto mb-10">
+          <Heading className="text-4xl sm:text-5xl font-extrabold">
             <span className="text-neutral-900">Galeri </span>
             <span className="text-gradient">Kegiatan</span>
-          </h2>
+          </Heading>
           <p className="text-neutral-500 text-lg mt-4 leading-relaxed">
             Momen-momen terbaik dari acara dan kegiatan komunitas kami.
           </p>
+          {!page && (
+            <Link href="/galeri" className="group mt-5 inline-flex items-center gap-2 text-sm font-semibold text-accent hover:text-primary transition-colors">
+              Lihat semua foto <ArrowRight size={16} className="transition-transform group-hover:translate-x-1" />
+            </Link>
+          )}
         </div>
 
         {/* filter pill */}
-        <div className="flex justify-center mb-14 reveal">
+        <div data-a="up" className="flex justify-center mb-14">
           <div className="inline-flex p-1.5 rounded-full bg-white shadow-[0_6px_24px_-8px_rgba(30,79,163,0.3)] ring-1 ring-black/5">
             {filters.map((f) => (
               <button
                 key={f.key}
-                onClick={() => { setFilter(f.key); setActive(0); }}
+                onClick={() => { setFilter(f.key); setActive(0); pg.reset(); }}
                 className={`px-4 sm:px-6 py-2.5 rounded-full text-[15px] font-medium transition-all ${
                   filter === f.key ? "bg-primary text-white shadow-md" : "text-neutral-500 hover:text-primary"
                 }`}
@@ -147,7 +160,7 @@ export default function Gallery({ items }: GalleryProps) {
 
         {/* coverflow */}
         <div
-          className="relative h-[240px] sm:h-[340px] lg:h-[400px] reveal"
+          data-a="up" className="relative h-[240px] sm:h-[340px] lg:h-[400px]"
           onMouseEnter={() => setPaused(true)}
           onMouseLeave={() => setPaused(false)}
         >
@@ -214,13 +227,16 @@ export default function Gallery({ items }: GalleryProps) {
           ))}
         </div>
 
-        {/* grid 3 kolom */}
-        <div className="columns-1 sm:columns-2 lg:columns-3 gap-5 [&>*]:mb-5">
-          {list.map((item, i) => (
+        {/* grid 3 kolom, dibagi per halaman */}
+        <div ref={gridTop} className="scroll-mt-28" />
+        <div data-stagger="70" className="columns-1 sm:columns-2 lg:columns-3 gap-5 [&>*]:mb-5">
+          {list.slice(pg.start, pg.end).map((item, k) => {
+            const i = pg.start + k; // indeks sebenarnya di seluruh daftar (untuk lightbox & warna cadangan)
+            return (
             <button
               key={item.id}
               onClick={() => setSelected(i)}
-              className="gallery-item reveal relative block w-full break-inside-avoid cursor-zoom-in"
+              data-a="zoom" data-cursor="Lihat" className="gallery-item relative block w-full break-inside-avoid cursor-zoom-in"
               aria-label={`Buka foto: ${item.title}`}
             >
               {item.image_url ? (
@@ -233,8 +249,10 @@ export default function Gallery({ items }: GalleryProps) {
                 </div>
               )}
             </button>
-          ))}
+            );
+          })}
         </div>
+        <Pagination page={pg.page} pages={pg.pages} total={n} size={GRID} onChange={pg.go} noun="foto" />
       </div>
 
       {current && selected !== null && (

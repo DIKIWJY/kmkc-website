@@ -1,34 +1,47 @@
 "use client";
 
-import { useMemo, useState, useRef, useTransition } from "react";
+import { useEffect, useMemo, useState, useRef, useTransition } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
-  Plus, Search, Pencil, Trash2, X, Loader2, ArrowUp, ArrowDown, ChevronLeft, ChevronRight, ImageIcon, Images, ExternalLink,
+  Plus, Search, Pencil, Trash2, X, Loader2, ChevronUp, ChevronDown, ImageIcon, Images, ArrowUpRight, Inbox, ArrowUpDown,
 } from "lucide-react";
 import { RESOURCES, type Field, type Column } from "@/lib/admin/schema";
 import { saveRecord, deleteRecord, moveRecord, setFlag } from "@/lib/admin/actions";
 import { uploadImage } from "@/lib/image";
 import { slugify } from "@/lib/slug";
+import { rupiah } from "@/lib/money";
+import Photo from "@/components/ui/Photo";
 import ImageField from "./ImageField";
 import MarkdownField from "./MarkdownField";
+import { PageHeader, Card, Badge, EmptyState } from "./ui";
 import { useToast } from "./Toast";
+import Pagination from "@/components/ui/Pagination";
+import RelTime from "@/components/ui/RelTime";
 
 type Row = Record<string, unknown>;
 const str = (v: unknown) => (v === null || v === undefined ? "" : String(v));
-const PAGE_SIZE = 10;
+const PAGE_SIZE = 12;
 
 const fmtDate = (v: unknown) =>
   v ? new Date(String(v) + (String(v).length === 10 ? "T00:00:00" : "")).toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" }) : "—";
 
-const badgeStyle: Record<string, string> = {
-  upcoming: "bg-sky-50 text-sky-700", ongoing: "bg-blue-50 text-blue-700", completed: "bg-slate-100 text-slate-600",
-  Acara: "bg-blue-50 text-blue-700", Kegiatan: "bg-cyan-50 text-cyan-700",
-  baru: "bg-amber-50 text-amber-700", dihubungi: "bg-sky-50 text-sky-700", diterima: "bg-blue-50 text-blue-800", ditolak: "bg-slate-100 text-slate-500",
+const badgeTone: Record<string, "gray" | "blue" | "solid" | "red"> = {
+  upcoming: "blue", ongoing: "solid", completed: "gray",
+  Acara: "blue", Kegiatan: "gray",
+  baru: "solid", dihubungi: "blue", diterima: "blue", ditolak: "gray",
 };
-const badgeLabel: Record<string, string> = { upcoming: "Akan datang", ongoing: "Berjalan", completed: "Selesai", baru: "Baru", dihubungi: "Dihubungi", diterima: "Diterima", ditolak: "Ditolak" };
+const badgeLabel: Record<string, string> = {
+  upcoming: "Akan datang", ongoing: "Berjalan", completed: "Selesai", baru: "Baru", dihubungi: "Dihubungi", diterima: "Diterima", ditolak: "Ditolak",
+};
 
-const inputCls =
-  "w-full px-3.5 py-2.5 rounded-xl bg-white border border-border text-sm focus:outline-none focus:ring-2 focus:ring-accent/25 focus:border-accent transition";
+/** Cegah halaman di belakang ikut bergulir saat lembar/dialog terbuka. */
+function useLockScroll() {
+  useEffect(() => {
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => { document.body.style.overflow = prev; };
+  }, []);
+}
 
 export default function ResourceManager({ resourceKey, rows, headerExtra }: { resourceKey: string; rows: Row[]; headerExtra?: React.ReactNode }) {
   const res = RESOURCES[resourceKey];
@@ -44,22 +57,39 @@ export default function ResourceManager({ resourceKey, rows, headerExtra }: { re
   const [bulk, setBulk] = useState<{ done: number; total: number } | null>(null);
   const bulkInput = useRef<HTMLInputElement>(null);
 
+  // Urutan: kolom tanggal utama (mis. "Masuk" pada pendaftar) dan kolom nama bisa diurutkan lewat menu atau klik judul kolom.
+  const dateKey = res.order.col === "order_index" ? "created_at" : res.order.col;
+  const nameKey = res.columns.find((c) => !c.type || c.type === "text")?.key ?? res.labelField;
+  const [sort, setSort] = useState<{ key: string; dir: "asc" | "desc" } | null>(null);
+  const sortValue = !sort ? "default" : sort.key === dateKey ? (sort.dir === "desc" ? "new" : "old") : sort.key === nameKey ? (sort.dir === "asc" ? "az" : "za") : "default";
+  const chooseSort = (v: string) =>
+    setSort(v === "new" ? { key: dateKey, dir: "desc" } : v === "old" ? { key: dateKey, dir: "asc" } : v === "az" ? { key: nameKey, dir: "asc" } : v === "za" ? { key: nameKey, dir: "desc" } : null);
+  /** Klik judul kolom: menurun → menaik → urutan bawaan. */
+  const toggleSort = (key: string) =>
+    setSort((cur) => (!cur || cur.key !== key ? { key, dir: key === nameKey ? "asc" : "desc" } : (key === nameKey ? cur.dir === "asc" : cur.dir === "desc") ? { key, dir: cur.dir === "asc" ? "desc" : "asc" } : null));
+
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
-    if (!q) return rows;
-    return rows.filter((r) => res.searchFields.some((f) => str(r[f]).toLowerCase().includes(q)));
-  }, [rows, query, res.searchFields]);
+    const base = !q ? rows : rows.filter((r) => res.searchFields.some((f) => str(r[f]).toLowerCase().includes(q)));
+    if (!sort) return base;
+    const m = sort.dir === "asc" ? 1 : -1;
+    return [...base].sort((a, b) => {
+      const x = str(a[sort.key]), y = str(b[sort.key]);
+      const c = sort.key === nameKey ? x.localeCompare(y, "id", { sensitivity: "base" }) : x < y ? -1 : x > y ? 1 : 0;
+      return c !== 0 ? c * m : (str(a.created_at) < str(b.created_at) ? -1 : str(a.created_at) > str(b.created_at) ? 1 : 0) * m;
+    });
+  }, [rows, query, res.searchFields, sort, nameKey]);
 
   const pages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const cur = Math.min(page, pages);
   const visible = filtered.slice((cur - 1) * PAGE_SIZE, cur * PAGE_SIZE);
-  const canReorder = res.reorder && !query.trim();
+  const canReorder = !!res.reorder && !query.trim() && !sort;
 
   function refresh() {
     startTransition(() => router.refresh());
   }
 
-  // Saklar cepat di tabel (mis. sembunyikan foto / jadikan sorotan) — langsung tersimpan, tampilan diperbarui seketika.
+  // Sakelar cepat di tabel (mis. sembunyikan foto / jadikan sorotan): tersimpan langsung, tampilan berubah seketika.
   const [flags, setFlags] = useState<Record<string, boolean>>({});
   async function onFlag(id: string, field: string, next: boolean) {
     const k = `${id}:${field}`;
@@ -120,133 +150,180 @@ export default function ResourceManager({ resourceKey, rows, headerExtra }: { re
     refresh();
   }
 
-  return (
-    <div className="space-y-5">
-      {/* header */}
-      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-primary-dark">{res.title}</h1>
-          <p className="text-neutral-500 text-sm mt-1 max-w-2xl">{res.description}</p>
-        </div>
-        <div className="flex gap-2 shrink-0">
-          {headerExtra}
-          {res.bulkImage && (
-            <>
-              <input ref={bulkInput} type="file" accept="image/*" multiple className="hidden" onChange={(e) => bulkUpload(e.target.files)} />
-              <button
-                onClick={() => bulkInput.current?.click()}
-                disabled={!!bulk}
-                className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white ring-1 ring-border text-sm font-semibold text-primary hover:ring-accent/50 disabled:opacity-60"
-              >
-                {bulk ? <Loader2 size={16} className="animate-spin" /> : <Images size={16} />}
-                {bulk ? `Mengunggah ${bulk.done}/${bulk.total}` : "Unggah banyak foto"}
-              </button>
-            </>
-          )}
-          <button
-            onClick={() => setEditing("new")}
-            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-brand-gradient text-white text-sm font-semibold shadow-md shadow-blue-500/25 hover:scale-[1.02] transition"
-          >
-            <Plus size={16} /> Tambah {res.singular}
-          </button>
-        </div>
-      </div>
+  const toggleCell = (c: Column, r: Row, id: string) => {
+    const on = flags[`${id}:${c.key}`] ?? !!r[c.key];
+    return (
+      <button
+        type="button"
+        role="switch"
+        aria-checked={on}
+        aria-label={`${c.label}: ${str(r[res.labelField])}`}
+        onClick={() => onFlag(id, c.key, !on)}
+        className="inline-flex items-center gap-2.5 text-[13px] text-[var(--ad-ink-2)]"
+      >
+        <span className="ad-switch" aria-hidden data-on={on} />
+        <span>{on ? c.boolLabels?.[0] : c.boolLabels?.[1]}</span>
+      </button>
+    );
+  };
 
-      {/* table card */}
-      <div className="bg-white rounded-2xl ring-1 ring-border shadow-sm overflow-hidden">
-        <div className="p-4 border-b border-border flex items-center gap-3">
+  const actions = (r: Row, id: string) => (
+    <div className="flex justify-end items-center gap-0.5">
+      {resourceKey === "articles" && !!r.published && (
+        <a href={`/berita/${str(r.slug)}`} target="_blank" rel="noreferrer" className="ad-icon-btn" aria-label="Lihat di website"><ArrowUpRight size={17} /></a>
+      )}
+      <button onClick={() => setEditing(r)} className="ad-icon-btn" aria-label={`Edit ${str(r[res.labelField])}`}><Pencil size={16} /></button>
+      <button onClick={() => setToDelete(r)} disabled={busyId === id} className="ad-icon-btn danger" aria-label={`Hapus ${str(r[res.labelField])}`}><Trash2 size={16} /></button>
+    </div>
+  );
+
+  const reorder = (id: string, globalIdx: number) => (
+    <div className="flex flex-col">
+      <button disabled={busyId === id || globalIdx === 0} onClick={() => onMove(id, "up")} className="ad-icon-btn !h-5 !w-7 !rounded-md" aria-label="Naikkan"><ChevronUp size={16} /></button>
+      <button disabled={busyId === id || globalIdx === filtered.length - 1} onClick={() => onMove(id, "down")} className="ad-icon-btn !h-5 !w-7 !rounded-md" aria-label="Turunkan"><ChevronDown size={16} /></button>
+    </div>
+  );
+
+  // Kolom untuk tampilan seluler: gambar → thumbnail, kolom teks pertama → judul, sisanya → baris keterangan.
+  const imgCol = res.columns.find((c) => c.type === "image");
+  const titleCol = res.columns.find((c) => !c.type || c.type === "text");
+  const metaCols = res.columns.filter((c) => c !== imgCol && c !== titleCol);
+
+  return (
+    <div>
+      <PageHeader title={res.title} subtitle={res.description}>
+        {headerExtra}
+        {res.bulkImage && (
+          <>
+            <input ref={bulkInput} type="file" accept="image/*" multiple className="hidden" onChange={(e) => bulkUpload(e.target.files)} />
+            <button onClick={() => bulkInput.current?.click()} disabled={!!bulk} className="ad-btn">
+              {bulk ? <Loader2 size={16} className="animate-spin" /> : <Images size={16} />}
+              {bulk ? `Mengunggah ${bulk.done}/${bulk.total}` : "Unggah banyak"}
+            </button>
+          </>
+        )}
+        <button onClick={() => setEditing("new")} className="ad-btn ad-btn-primary">
+          <Plus size={16} strokeWidth={2.4} /> Tambah {res.singular}
+        </button>
+      </PageHeader>
+
+      <Card className="overflow-hidden">
+        <div className="flex items-center gap-3 p-3 sm:p-4 border-b border-[var(--ad-line)]">
           <div className="relative flex-1 max-w-sm">
-            <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-neutral-400" />
+            <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[var(--ad-faint)] pointer-events-none" />
             <input
               value={query}
               onChange={(e) => { setQuery(e.target.value); setPage(1); }}
-              placeholder={`Cari ${res.singular.toLowerCase()}…`}
-              className={`${inputCls} pl-10`}
+              placeholder={`Cari ${res.singular.toLowerCase()}`}
+              aria-label={`Cari ${res.singular.toLowerCase()}`}
+              className="ad-input ad-input-search"
             />
           </div>
-          <span className="text-xs text-neutral-400 ml-auto">{filtered.length} data</span>
-          {pending && <Loader2 size={16} className="animate-spin text-accent" />}
+          <span className="ml-auto hidden text-[13px] text-[var(--ad-mute)] tnum whitespace-nowrap sm:inline">{filtered.length} data</span>
+          <label className="relative inline-flex items-center">
+            <ArrowUpDown size={14} className="pointer-events-none absolute left-3 text-[var(--ad-mute)]" aria-hidden />
+            <span className="sr-only">Urutkan</span>
+            <select
+              value={sortValue}
+              onChange={(e) => { chooseSort(e.target.value); setPage(1); }}
+              className="ad-input !h-[38px] !w-auto !pl-8 !pr-9 !text-[13.5px] !font-medium"
+              aria-label="Urutkan"
+            >
+              <option value="default">{res.reorder ? "Urutan tampil" : "Urutan bawaan"}</option>
+              <option value="new">Terbaru</option>
+              <option value="old">Terlama</option>
+              <option value="az">Nama A–Z</option>
+              <option value="za">Nama Z–A</option>
+            </select>
+          </label>
+          {pending && <Loader2 size={16} className="animate-spin text-[var(--ad-blue)]" aria-label="Memuat" />}
         </div>
 
         {visible.length === 0 ? (
-          <div className="py-16 text-center text-neutral-400">
-            <ImageIcon size={32} className="mx-auto mb-3 opacity-50" />
-            <p className="text-sm">{query ? "Tidak ada hasil yang cocok." : `Belum ada ${res.singular.toLowerCase()}. Klik “Tambah ${res.singular}”.`}</p>
-          </div>
+          <EmptyState
+            icon={query ? Search : Inbox}
+            title={query ? "Tidak ada hasil" : `Belum ada ${res.singular.toLowerCase()}`}
+            text={query ? "Coba kata kunci lain." : `Klik “Tambah ${res.singular}” untuk membuat yang pertama.`}
+          />
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="text-left text-xs uppercase tracking-wide text-neutral-400 bg-surface/60">
-                  {canReorder && <th className="px-4 py-3 w-20">Urut</th>}
-                  {res.columns.map((c) => <th key={c.key} className="px-4 py-3 font-semibold">{c.label}</th>)}
-                  <th className="px-4 py-3 w-28 text-right">Aksi</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-border">
-                {visible.map((r, idx) => {
-                  const id = str(r.id);
-                  const globalIdx = (cur - 1) * PAGE_SIZE + idx;
-                  return (
-                    <tr key={id} className="hover:bg-surface/50 transition-colors">
-                      {canReorder && (
-                        <td className="px-4 py-3">
-                          <div className="flex gap-1">
-                            <button disabled={busyId === id || globalIdx === 0} onClick={() => onMove(id, "up")} className="w-7 h-7 rounded-lg ring-1 ring-border flex items-center justify-center text-neutral-500 hover:text-primary disabled:opacity-30" aria-label="Naikkan"><ArrowUp size={14} /></button>
-                            <button disabled={busyId === id || globalIdx === filtered.length - 1} onClick={() => onMove(id, "down")} className="w-7 h-7 rounded-lg ring-1 ring-border flex items-center justify-center text-neutral-500 hover:text-primary disabled:opacity-30" aria-label="Turunkan"><ArrowDown size={14} /></button>
-                          </div>
-                        </td>
-                      )}
-                      {res.columns.map((c) => {
-                        if (c.quickToggle) {
-                          const on = flags[`${id}:${c.key}`] ?? !!r[c.key];
-                          return (
-                            <td key={c.key} className="px-4 py-3 align-middle">
-                              <button
-                                type="button"
-                                role="switch"
-                                aria-checked={on}
-                                aria-label={`${c.label}: ${str(r[res.labelField])}`}
-                                onClick={() => onFlag(id, c.key, !on)}
-                                className="group inline-flex items-center gap-2 text-xs font-semibold"
-                              >
-                                <span className={`relative w-9 h-5 rounded-full transition-colors ${on ? "bg-accent" : "bg-neutral-300"}`}>
-                                  <span className={`absolute top-0.5 w-4 h-4 rounded-full bg-white shadow transition-all ${on ? "left-[1.1rem]" : "left-0.5"}`} />
-                                </span>
-                                <span className={on ? "text-primary" : "text-neutral-400"}>{on ? c.boolLabels?.[0] : c.boolLabels?.[1]}</span>
-                              </button>
-                            </td>
-                          );
-                        }
-                        return <td key={c.key} className="px-4 py-3 align-middle">{renderCell(c, r)}</td>;
-                      })}
-                      <td className="px-4 py-3">
-                        <div className="flex justify-end gap-1.5">
-                          {resourceKey === "articles" && !!r.published && (
-                            <a href={`/berita/${str(r.slug)}`} target="_blank" rel="noreferrer" className="w-8 h-8 rounded-lg ring-1 ring-border flex items-center justify-center text-neutral-500 hover:text-accent" aria-label="Lihat"><ExternalLink size={14} /></a>
-                          )}
-                          <button onClick={() => setEditing(r)} className="w-8 h-8 rounded-lg ring-1 ring-border flex items-center justify-center text-neutral-500 hover:text-primary hover:ring-accent/50" aria-label="Edit"><Pencil size={14} /></button>
-                          <button onClick={() => setToDelete(r)} className="w-8 h-8 rounded-lg ring-1 ring-border flex items-center justify-center text-neutral-500 hover:text-red-600 hover:ring-red-200" aria-label="Hapus"><Trash2 size={14} /></button>
+          <>
+            {/* ---------- Desktop / tablet: tabel ---------- */}
+            <div className="hidden md:block overflow-x-auto">
+              <table className="ad-table">
+                <thead>
+                  <tr>
+                    {canReorder && <th className="w-14" aria-label="Urutan" />}
+                    {res.columns.map((c) => {
+                      const can = c.key === dateKey || c.key === nameKey;
+                      if (!can) return <th key={c.key}>{c.label}</th>;
+                      const on = sort?.key === c.key;
+                      return (
+                        <th key={c.key} aria-sort={on ? (sort!.dir === "asc" ? "ascending" : "descending") : undefined}>
+                          <button type="button" onClick={() => toggleSort(c.key)} className={`inline-flex items-center gap-1 font-medium transition-colors hover:text-[var(--ad-ink)] ${on ? "text-[var(--ad-blue-ink)]" : ""}`}>
+                            {c.label}
+                            {on ? (sort!.dir === "asc" ? <ChevronUp size={13} /> : <ChevronDown size={13} />) : <ArrowUpDown size={12} className="opacity-40" />}
+                          </button>
+                        </th>
+                      );
+                    })}
+                    <th className="text-right w-px"><span className="sr-only">Aksi</span></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {visible.map((r, idx) => {
+                    const id = str(r.id);
+                    const globalIdx = (cur - 1) * PAGE_SIZE + idx;
+                    return (
+                      <tr key={id}>
+                        {canReorder && <td className="!pr-0">{reorder(id, globalIdx)}</td>}
+                        {res.columns.map((c) => (
+                          <td key={c.key}>{c.quickToggle ? toggleCell(c, r, id) : renderCell(c, r)}</td>
+                        ))}
+                        <td className="whitespace-nowrap">{actions(r, id)}</td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+
+            {/* ---------- Seluler: daftar kartu ---------- */}
+            <ul className="md:hidden ad-divide">
+              {visible.map((r, idx) => {
+                const id = str(r.id);
+                const globalIdx = (cur - 1) * PAGE_SIZE + idx;
+                return (
+                  <li key={id} className="p-4">
+                    <div className="flex items-start gap-3">
+                      {imgCol && <Thumb src={str(r[imgCol.key])} />}
+                      <div className="min-w-0 flex-1">
+                        {titleCol && renderCell(titleCol, r)}
+                        <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1.5">
+                          {metaCols.filter((c) => !c.quickToggle).map((c) => {
+                            const cell = renderCell(c, r, true);
+                            return cell ? <span key={c.key} className="inline-flex">{cell}</span> : null;
+                          })}
                         </div>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
+                        {metaCols.some((c) => c.quickToggle) && (
+                          <div className="mt-3 flex flex-wrap gap-x-5 gap-y-2">
+                            {metaCols.filter((c) => c.quickToggle).map((c) => <span key={c.key}>{toggleCell(c, r, id)}</span>)}
+                          </div>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-1 -mr-1.5 shrink-0">
+                        {canReorder && reorder(id, globalIdx)}
+                        {actions(r, id)}
+                      </div>
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
+          </>
         )}
 
-        {pages > 1 && (
-          <div className="flex items-center justify-between px-4 py-3 border-t border-border text-sm text-neutral-500">
-            <span>Halaman {cur} dari {pages}</span>
-            <div className="flex gap-1.5">
-              <button disabled={cur === 1} onClick={() => setPage(cur - 1)} className="w-8 h-8 rounded-lg ring-1 ring-border flex items-center justify-center disabled:opacity-30"><ChevronLeft size={16} /></button>
-              <button disabled={cur === pages} onClick={() => setPage(cur + 1)} className="w-8 h-8 rounded-lg ring-1 ring-border flex items-center justify-center disabled:opacity-30"><ChevronRight size={16} /></button>
-            </div>
-          </div>
-        )}
-      </div>
+        <Pagination variant="admin" page={cur} pages={pages} total={filtered.length} size={PAGE_SIZE} onChange={(n) => { setPage(n); window.scrollTo({ top: 0, behavior: "smooth" }); }} noun="data" />
+      </Card>
 
       {editing && (
         <RecordForm
@@ -258,60 +335,92 @@ export default function ResourceManager({ resourceKey, rows, headerExtra }: { re
       )}
 
       {toDelete && (
-        <div className="fixed inset-0 z-[70] bg-black/45 flex items-center justify-center p-4" onClick={() => setToDelete(null)}>
-          <div className="bg-white rounded-2xl p-6 max-w-sm w-full shadow-2xl" onClick={(e) => e.stopPropagation()}>
-            <div className="w-12 h-12 rounded-full bg-red-50 text-red-500 flex items-center justify-center mb-4"><Trash2 size={22} /></div>
-            <h3 className="text-lg font-bold text-neutral-900">Hapus {res.singular.toLowerCase()} ini?</h3>
-            <p className="text-sm text-neutral-500 mt-1.5">“{str(toDelete[res.labelField])}” akan dihapus permanen{res.imageFields.length ? ", termasuk file fotonya" : ""}.</p>
-            <div className="flex gap-2 mt-6 justify-end">
-              <button onClick={() => setToDelete(null)} className="px-4 py-2.5 rounded-xl text-sm font-medium text-neutral-600 hover:bg-surface">Batal</button>
-              <button onClick={confirmDelete} disabled={busyId === str(toDelete.id)} className="px-4 py-2.5 rounded-xl text-sm font-semibold bg-red-500 text-white hover:bg-red-600 inline-flex items-center gap-2 disabled:opacity-60">
-                {busyId === str(toDelete.id) && <Loader2 size={14} className="animate-spin" />} Ya, hapus
-              </button>
-            </div>
-          </div>
-        </div>
+        <ConfirmDialog
+          title={`Hapus ${res.singular.toLowerCase()} ini?`}
+          text={`“${str(toDelete[res.labelField])}” akan dihapus permanen${res.imageFields.length ? ", termasuk file fotonya" : ""}. Tindakan ini tidak bisa dibatalkan.`}
+          confirmLabel="Hapus"
+          busy={busyId === str(toDelete.id)}
+          onConfirm={confirmDelete}
+          onCancel={() => setToDelete(null)}
+        />
       )}
     </div>
   );
 }
 
-function renderCell(c: Column, r: Row) {
+function Thumb({ src, size = 48 }: { src: string; size?: number }) {
+  return (
+    <span className="relative shrink-0 overflow-hidden rounded-[10px] bg-[var(--ad-fill)] shadow-[inset_0_0_0_1px_rgba(0,0,0,0.06)]" style={{ width: size, height: size }}>
+      {src ? <Photo src={src} alt="" sizes={`${size * 2}px`} /> : <span className="absolute inset-0 flex items-center justify-center text-[var(--ad-faint)]"><ImageIcon size={18} strokeWidth={1.6} /></span>}
+    </span>
+  );
+}
+
+function renderCell(c: Column, r: Row, compact = false) {
   const v = r[c.key];
   switch (c.type) {
     case "image":
-      return v ? (
-        <img src={str(v)} alt="" className="w-12 h-12 rounded-lg object-cover ring-1 ring-border" />
-      ) : (
-        <div className="w-12 h-12 rounded-lg bg-primary/10 text-primary/50 flex items-center justify-center"><ImageIcon size={18} /></div>
-      );
+      return <Thumb src={str(v)} />;
     case "badge":
-      return str(v) ? (
-        <span className={`inline-block text-xs font-semibold px-2.5 py-1 rounded-full ${badgeStyle[str(v)] ?? "bg-surface-alt text-neutral-600"}`}>
-          {badgeLabel[str(v)] ?? str(v)}
-        </span>
-      ) : "—";
+      return str(v) ? <Badge tone={badgeTone[str(v)] ?? "gray"}>{badgeLabel[str(v)] ?? str(v)}</Badge> : <span className="text-[var(--ad-faint)]">—</span>;
     case "date":
-      return <span className="text-neutral-600 whitespace-nowrap">{fmtDate(v)}</span>;
+      if (c.key.endsWith("_at") && v) return <RelTime iso={str(v)} className="text-[var(--ad-mute)] whitespace-nowrap tnum text-[13px]" />;
+      return <span className="text-[var(--ad-mute)] whitespace-nowrap tnum text-[13px]">{fmtDate(v)}</span>;
+    case "money":
+      return Number(v) > 0 ? <span className="whitespace-nowrap tnum text-[13px] text-[var(--ad-ink-2)]">{rupiah(Number(v))}</span> : <span className="text-[var(--ad-faint)] text-[13px]">—</span>;
     case "bool":
+      if (compact && !v && c.boolLabels) return <span className="text-[var(--ad-faint)] text-[13px] whitespace-nowrap">{c.label}: {c.boolLabels[1].toLowerCase()}</span>;
       return v ? (
-        <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-sky-50 text-sky-700">{c.boolLabels?.[0] ?? "Terbit"}</span>
+        <Badge tone="blue">{c.boolLabels?.[0] ?? "Terbit"}</Badge>
       ) : c.boolLabels ? (
-        <span className="text-neutral-300">{c.boolLabels[1]}</span>
+        <span className="text-[var(--ad-faint)] text-[13px]">{c.boolLabels[1]}</span>
       ) : (
-        <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-amber-50 text-amber-700">Draft</span>
+        <Badge>Draft</Badge>
       );
     default:
+      if (compact) {
+        const t = [str(v), c.sub ? str(r[c.sub]) : ""].filter(Boolean).join(" · ");
+        return t ? <span className="text-[13px] text-[var(--ad-mute)]">{t}</span> : null;
+      }
       return (
-        <div className="min-w-[8rem] max-w-xs">
-          <p className="font-semibold text-neutral-900 truncate">{str(v) || "—"}</p>
-          {c.sub && <p className="text-xs text-neutral-400 truncate">{str(r[c.sub])}</p>}
+        <div className="min-w-[8rem] max-w-[22rem]">
+          <p className="font-medium text-[var(--ad-ink)] truncate">{str(v) || "—"}</p>
+          {c.sub && str(r[c.sub]) && <p className="text-[13px] text-[var(--ad-mute)] truncate">{str(r[c.sub])}</p>}
         </div>
       );
   }
 }
 
+/* -------------------------------------------------------- dialog konfirmasi */
+
+export function ConfirmDialog({ title, text, confirmLabel, busy, onConfirm, onCancel }: {
+  title: string; text: string; confirmLabel: string; busy?: boolean; onConfirm: () => void; onCancel: () => void;
+}) {
+  useLockScroll();
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && !busy && onCancel();
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [busy, onCancel]);
+  return (
+    <div className="ad-backdrop !items-center !p-5" onClick={() => !busy && onCancel()}>
+      <div role="alertdialog" aria-modal="true" aria-label={title} onClick={(e) => e.stopPropagation()} className="w-full max-w-[340px] rounded-[20px] bg-white p-6 text-center shadow-[0_30px_80px_rgba(0,0,0,0.3)]" style={{ animation: "ad-pop .24s var(--ad-ease) both" }}>
+        <h2 className="text-[17px] font-semibold tracking-tight">{title}</h2>
+        <p className="mt-2 text-[14px] leading-snug text-[var(--ad-mute)] break-words">{text}</p>
+        <div className="mt-6 grid gap-2">
+          <button onClick={onConfirm} disabled={busy} className="ad-btn ad-btn-danger-solid ad-btn-lg w-full">
+            {busy && <Loader2 size={16} className="animate-spin" />} {confirmLabel}
+          </button>
+          <button onClick={onCancel} disabled={busy} className="ad-btn ad-btn-lg w-full" autoFocus>Batal</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 /* ---------------------------------------------------------------- form */
+
+const inputCls = "ad-input";
 
 function RecordForm({ resourceKey, record, onClose, onSaved }: { resourceKey: string; record: Row | null; onClose: () => void; onSaved: () => void }) {
   const res = RESOURCES[resourceKey];
@@ -327,10 +436,21 @@ function RecordForm({ resourceKey, record, onClose, onSaved }: { resourceKey: st
     return init;
   });
   const [error, setError] = useState("");
+  const [dirty, setDirty] = useState(false);
+  const [confirmClose, setConfirmClose] = useState(false);
 
-  const set = (name: string, v: unknown) => setValues((s) => ({ ...s, [name]: v }));
+  useLockScroll();
+  const tryClose = () => (dirty && !saving ? setConfirmClose(true) : onClose());
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && !confirmClose && !saving && tryClose();
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  });
+
+  const set = (name: string, v: unknown) => { setDirty(true); setValues((s) => ({ ...s, [name]: v })); };
 
   function onFieldChange(f: Field, v: unknown) {
+    setDirty(true);
     setValues((s) => {
       const next = { ...s, [f.name]: v };
       const slugField = res.fields.find((x) => x.type === "slug" && x.slugFrom === f.name);
@@ -350,65 +470,96 @@ function RecordForm({ resourceKey, record, onClose, onSaved }: { resourceKey: st
     onSaved();
   }
 
+  const title = `${record ? "Edit" : "Tambah"} ${res.singular}`;
   return (
-    <div className="fixed inset-0 z-[70] bg-black/45 flex items-start sm:items-center justify-center p-0 sm:p-6 overflow-y-auto" onClick={onClose}>
-      <form onSubmit={submit} onClick={(e) => e.stopPropagation()} className="bg-white w-full sm:max-w-2xl sm:rounded-2xl shadow-2xl min-h-screen sm:min-h-0 flex flex-col">
-        <div className="flex items-center justify-between px-6 py-4 border-b border-border sticky top-0 bg-white sm:rounded-t-2xl z-10">
-          <h2 className="text-lg font-bold text-primary-dark">{record ? "Edit" : "Tambah"} {res.singular}</h2>
-          <button type="button" onClick={onClose} className="w-9 h-9 rounded-full hover:bg-surface flex items-center justify-center text-neutral-500" aria-label="Tutup"><X size={20} /></button>
+    <div className="ad-backdrop" onMouseDown={(e) => e.target === e.currentTarget && tryClose()}>
+      <form onSubmit={submit} className="ad-sheet" role="dialog" aria-modal="true" aria-label={title}>
+        <div className="ad-sheet-head">
+          <h2 className="text-[19px] font-semibold tracking-tight">{title}</h2>
+          <button type="button" onClick={tryClose} className="ad-icon-btn !bg-[var(--ad-fill)]" aria-label="Tutup"><X size={17} /></button>
         </div>
 
-        <div className="p-6 grid grid-cols-2 gap-x-4 gap-y-5">
-          {res.fields.map((f) => (
-            <div key={f.name} className={f.half ? "col-span-2 sm:col-span-1" : "col-span-2"}>
-              <label className="block text-sm font-medium text-neutral-700 mb-1.5">
-                {f.label} {f.required && <span className="text-red-500">*</span>}
-              </label>
-              {renderInput(f, values[f.name], (v) => (f.type === "slug" ? (setSlugTouched(true), set(f.name, v)) : onFieldChange(f, v)))}
-              {f.help && <p className="text-xs text-neutral-400 mt-1.5">{f.help}</p>}
-            </div>
-          ))}
+        <div className="ad-sheet-body">
+          <div className="grid grid-cols-2 gap-x-4 gap-y-5">
+            {res.fields.map((f) => (
+              <div key={f.name} className={f.half ? "col-span-2 sm:col-span-1" : "col-span-2"}>
+                {f.type !== "toggle" && (
+                  <label className="ad-label" htmlFor={`f-${f.name}`}>
+                    {f.label} {f.required && <span className="text-[var(--ad-red)]" aria-hidden>*</span>}
+                  </label>
+                )}
+                {renderInput(f, values[f.name], (v) => (f.type === "slug" ? (setSlugTouched(true), set(f.name, v)) : onFieldChange(f, v)))}
+                {f.help && <p className="ad-help">{f.help}</p>}
+              </div>
+            ))}
+          </div>
+          {error && <p role="alert" className="mt-5 rounded-[10px] bg-[var(--ad-red-soft)] px-3.5 py-2.5 text-[14px] text-[var(--ad-red)]">{error}</p>}
         </div>
 
-        {error && <p className="mx-6 mb-2 text-sm text-red-600 bg-red-50 rounded-xl px-4 py-2.5">{error}</p>}
-
-        <div className="flex justify-end gap-2 px-6 py-4 border-t border-border mt-auto sticky bottom-0 bg-white sm:rounded-b-2xl">
-          <button type="button" onClick={onClose} className="px-5 py-2.5 rounded-xl text-sm font-medium text-neutral-600 hover:bg-surface">Batal</button>
-          <button type="submit" disabled={saving} className="px-6 py-2.5 rounded-xl text-sm font-semibold bg-brand-gradient text-white shadow-md shadow-blue-500/25 inline-flex items-center gap-2 disabled:opacity-60">
+        <div className="ad-sheet-foot">
+          <button type="button" onClick={tryClose} className="ad-btn">Batal</button>
+          <button type="submit" disabled={saving} className="ad-btn ad-btn-primary min-w-[96px]">
             {saving && <Loader2 size={15} className="animate-spin" />} Simpan
           </button>
         </div>
       </form>
+
+      {confirmClose && (
+        <ConfirmDialog
+          title="Buang perubahan?"
+          text="Perubahan yang belum disimpan akan hilang."
+          confirmLabel="Buang perubahan"
+          onConfirm={onClose}
+          onCancel={() => setConfirmClose(false)}
+        />
+      )}
     </div>
   );
 }
 
 function renderInput(f: Field, value: unknown, onChange: (v: unknown) => void) {
+  const id = `f-${f.name}`;
   switch (f.type) {
     case "textarea":
-      return <textarea rows={3} value={str(value)} maxLength={f.max} onChange={(e) => onChange(e.target.value)} placeholder={f.placeholder} className={`${inputCls} resize-y`} />;
+      return <textarea id={id} rows={3} value={str(value)} maxLength={f.max} onChange={(e) => onChange(e.target.value)} placeholder={f.placeholder} className={inputCls} />;
     case "markdown":
       return <MarkdownField value={str(value)} onChange={onChange} />;
     case "select":
       return (
-        <select value={str(value)} onChange={(e) => onChange(e.target.value)} className={inputCls}>
+        <select id={id} value={str(value)} onChange={(e) => onChange(e.target.value)} className={inputCls}>
           {f.options?.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
         </select>
       );
     case "date":
-      return <input type="date" value={str(value)} onChange={(e) => onChange(e.target.value)} className={inputCls} />;
+      return <input id={id} type="date" value={str(value)} onChange={(e) => onChange(e.target.value)} className={inputCls} />;
     case "image":
       return <ImageField value={str(value)} onChange={onChange} folder={f.folder ?? "uploads"} maxSize={f.maxSize} square={f.folder === "members"} />;
+    case "proof":
+      return value ? (
+        <a href={`/admin/bukti/${str(value)}`} target="_blank" rel="noreferrer" className="block w-fit overflow-hidden rounded-[12px] shadow-[0_0_0_1px_var(--ad-line)]">
+          { }
+          <img src={`/admin/bukti/${str(value)}`} alt={f.label} loading="lazy" className="max-h-72 w-auto max-w-full object-contain" />
+        </a>
+      ) : (
+        <p className="text-[14px] text-[var(--ad-faint)]">{f.name === "payment_proof" ? "Tidak ada bukti pembayaran (tanpa HTM saat mendaftar)." : "Tidak ada bukti diunggah."}</p>
+      );
     case "toggle":
       return (
-        <button type="button" role="switch" aria-checked={!!value} onClick={() => onChange(!value)} className={`flex items-center gap-3 px-3.5 py-2.5 rounded-xl ring-1 w-full transition ${value ? "ring-sky-300 bg-sky-50" : "ring-border bg-white"}`}>
-          <span className={`relative w-10 h-6 rounded-full transition ${value ? "bg-sky-500" : "bg-neutral-300"}`}>
-            <span className={`absolute top-0.5 w-5 h-5 rounded-full bg-white shadow transition-all ${value ? "left-[1.1rem]" : "left-0.5"}`} />
+        <button
+          type="button"
+          role="switch"
+          aria-checked={!!value}
+          onClick={() => onChange(!value)}
+          className="flex w-full items-center justify-between gap-4 rounded-[10px] border border-[var(--ad-line-strong)] bg-white px-3.5 py-3 text-left"
+        >
+          <span>
+            <span className="block text-[15px] font-medium">{f.label}</span>
+            <span className="block text-[13px] text-[var(--ad-mute)]">{value ? (f.toggleLabels?.[0] ?? "Terbit") : (f.toggleLabels?.[1] ?? "Draft")}</span>
           </span>
-          <span className="text-sm font-medium text-neutral-700">{value ? (f.toggleLabels?.[0] ?? "Terbit") : (f.toggleLabels?.[1] ?? "Draft")}</span>
+          <span className="ad-switch" aria-hidden data-on={!!value} />
         </button>
       );
     default:
-      return <input type="text" value={str(value)} maxLength={f.max} onChange={(e) => onChange(e.target.value)} placeholder={f.placeholder} required={f.required} className={inputCls} />;
+      return <input id={id} type="text" value={str(value)} maxLength={f.max} onChange={(e) => onChange(e.target.value)} placeholder={f.placeholder} required={f.required} className={inputCls} />;
   }
 }

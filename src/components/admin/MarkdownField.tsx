@@ -24,26 +24,34 @@ export default function MarkdownField({ value, onChange, rows = 10 }: { value: s
     requestAnimationFrame(() => el.focus());
   }
 
-  const tool = "w-8 h-8 rounded-lg flex items-center justify-center text-neutral-500 hover:bg-white hover:text-primary";
+  const tool = "ad-icon-btn !h-8 !w-8";
   return (
-    <div className="rounded-xl ring-1 ring-border overflow-hidden bg-white">
-      <div className="flex items-center gap-1 px-2 py-1.5 bg-surface border-b border-border">
-        <button type="button" className={tool} onClick={() => wrap("**")} title="Tebal"><Bold size={15} /></button>
-        <button type="button" className={tool} onClick={() => wrap("*")} title="Miring"><Italic size={15} /></button>
-        <button type="button" className={tool} onClick={() => linePrefix("## ")} title="Judul"><Heading2 size={15} /></button>
-        <button type="button" className={tool} onClick={() => linePrefix("- ")} title="Daftar"><List size={15} /></button>
-        <button type="button" className={tool} onClick={() => wrap("[", "](https://)", "teks tautan")} title="Tautan"><Link2 size={15} /></button>
-        <div className="ml-auto flex text-xs rounded-lg bg-white ring-1 ring-border overflow-hidden">
-          <button type="button" onClick={() => setPreview(false)} className={`px-3 py-1.5 ${!preview ? "bg-primary text-white" : "text-neutral-500"}`}>Tulis</button>
-          <button type="button" onClick={() => setPreview(true)} className={`px-3 py-1.5 ${preview ? "bg-primary text-white" : "text-neutral-500"}`}>Pratinjau</button>
+    <div className="overflow-hidden rounded-[10px] border border-[var(--ad-line-strong)] bg-white focus-within:border-[var(--ad-blue)] focus-within:shadow-[0_0_0_4px_rgba(0,113,227,0.2)] transition-shadow">
+      <div className="flex items-center gap-0.5 border-b border-[var(--ad-line)] bg-[rgba(0,0,0,0.02)] px-2 py-1.5">
+        <button type="button" className={tool} onClick={() => wrap("**")} title="Tebal" aria-label="Tebal"><Bold size={16} /></button>
+        <button type="button" className={tool} onClick={() => wrap("*")} title="Miring" aria-label="Miring"><Italic size={16} /></button>
+        <button type="button" className={tool} onClick={() => linePrefix("## ")} title="Judul" aria-label="Judul"><Heading2 size={16} /></button>
+        <button type="button" className={tool} onClick={() => linePrefix("- ")} title="Daftar" aria-label="Daftar"><List size={16} /></button>
+        <button type="button" className={tool} onClick={() => wrap("[", "](https://)", "teks tautan")} title="Tautan" aria-label="Tautan"><Link2 size={16} /></button>
+        <div className="ad-seg ml-auto" role="tablist" aria-label="Mode">
+          <button type="button" role="tab" aria-selected={!preview} onClick={() => setPreview(false)}>Tulis</button>
+          <button type="button" role="tab" aria-selected={preview} onClick={() => setPreview(true)}>Pratinjau</button>
         </div>
       </div>
       {preview ? (
-        <div className="p-4 min-h-[14rem] text-neutral-700 leading-relaxed text-[15px]">
-          {value.trim() ? renderMarkdown(value) : <p className="text-neutral-400">Belum ada isi.</p>}
+        <div className="min-h-[14rem] p-4 text-[15px] leading-relaxed text-[var(--ad-ink-2)]">
+          {value.trim() ? renderMarkdown(value) : <p className="text-[var(--ad-faint)]">Belum ada isi.</p>}
         </div>
       ) : (
-        <textarea ref={ref} rows={rows} value={value} onChange={(e) => onChange(e.target.value)} className="w-full p-4 text-sm leading-relaxed focus:outline-none resize-y" placeholder="Tulis isi artikel di sini…" />
+        <textarea
+          ref={ref}
+          rows={rows}
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          className="block w-full resize-y bg-transparent p-4 text-[15px] leading-relaxed outline-none placeholder:text-[#a1a1a6]"
+          placeholder="Tulis isi artikel di sini…"
+          aria-label="Isi"
+        />
       )}
     </div>
   );

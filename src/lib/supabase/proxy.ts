@@ -18,17 +18,24 @@ export async function updateSession(request: NextRequest) {
     },
   });
 
-  const { data } = await supabase.auth.getUser();
+  // Klaim JWT diverifikasi lokal (tanpa perjalanan jaringan); jatuh ke server Auth jika tak tersedia.
+  let signedIn = false;
+  try {
+    const { data } = await supabase.auth.getClaims();
+    signedIn = !!data?.claims?.sub;
+  } catch {
+    signedIn = !!(await supabase.auth.getUser()).data.user;
+  }
   const path = request.nextUrl.pathname;
   const isLogin = path === "/admin/login";
 
-  if (!data.user && !isLogin) {
+  if (!signedIn && !isLogin) {
     const url = request.nextUrl.clone();
     url.pathname = "/admin/login";
     url.search = "";
     return NextResponse.redirect(url);
   }
-  if (data.user && isLogin) {
+  if (signedIn && isLogin) {
     const url = request.nextUrl.clone();
     url.pathname = "/admin";
     url.search = "";

@@ -1,13 +1,13 @@
 import { IconWhatsapp } from "@/components/icons/SocialIcons";
+import { waHref } from "@/lib/whatsapp";
 
 /** Tombol WhatsApp melayang (server component, tanpa JS). Hanya tampil bila nomor diisi di Pengaturan. */
 export default function WhatsAppButton({ number, name = "KMKC" }: { number?: string; name?: string }) {
-  const n = (number ?? "").replace(/\D/g, "");
-  if (n.length < 8) return null;
-  const text = encodeURIComponent(`Halo ${name}, saya ingin bertanya…`);
+  const href = waHref(number, `Halo ${name}, saya ingin bertanya…`);
+  if (!href) return null;
   return (
     <a
-      href={`https://wa.me/${n}?text=${text}`}
+      href={href}
       target="_blank"
       rel="noopener noreferrer"
       aria-label="Chat WhatsApp pengurus"

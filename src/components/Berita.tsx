@@ -1,5 +1,3 @@
-"use client";
-
 import Photo from "@/components/ui/Photo";
 import Link from "next/link";
 import { ArrowUpRight, Clock, ImageIcon } from "lucide-react";
@@ -8,6 +6,7 @@ import type { Article } from "@/lib/types";
 
 interface BeritaProps {
   articles: Article[];
+  page?: boolean;
 }
 
 function formatDate(dateStr: string | null) {
@@ -18,21 +17,21 @@ function formatDate(dateStr: string | null) {
 const gradients = [
   "linear-gradient(135deg,#1d4ed8,#0ea5e9)",
   "linear-gradient(135deg,#0ea5e9,#06b6d4)",
-  "linear-gradient(135deg,#06b6d4,#14b8a6)",
+  "linear-gradient(135deg,#0284c7,#38bdf8)",
 ];
 
-export default function Berita({ articles }: BeritaProps) {
+export default function Berita({ articles, page }: BeritaProps) {
   if (articles.length === 0) return null;
   const [featured, ...rest] = articles;
 
   return (
-    <section id="berita" className="py-24 lg:py-32">
+    <section className="py-24 lg:py-32">
       <div className="max-w-7xl mx-auto px-6 sm:px-10">
-        <SectionHeading title="Berita & Artikel" subtitle="Cerita dan informasi terbaru dari kegiatan kami." className="mb-14" />
+        <SectionHeading title="Berita & Artikel" subtitle="Cerita dan informasi terbaru dari kegiatan kami." className="mb-14" page={page} href="/berita" hrefLabel="Semua berita" />
 
         <div className="grid lg:grid-cols-5 gap-8">
           {/* featured */}
-          <Link href={`/berita/${featured.slug}`} className="lg:col-span-3 group cursor-pointer reveal block">
+          <Link href={`/berita/${featured.slug}`} data-a="up" className="lg:col-span-3 group cursor-pointer block">
             <div className="relative aspect-[16/10] rounded-[1.4rem] overflow-hidden mb-5 shadow-[0_20px_50px_-20px_rgba(30,79,163,0.4)]">
               {featured.cover_image ? (
                 <Photo src={featured.cover_image} alt={featured.title} sizes="(max-width: 1024px) 100vw, 600px" className="group-hover:scale-[1.03] transition-transform duration-500" />
@@ -54,7 +53,7 @@ export default function Berita({ articles }: BeritaProps) {
           </Link>
 
           {/* side list */}
-          <div className="lg:col-span-2 flex flex-col divide-y divide-border reveal">
+          <div data-a="up" className="lg:col-span-2 flex flex-col divide-y divide-border">
             {rest.map((article, i) => (
               <Link key={article.id} href={`/berita/${article.slug}`} className="group flex gap-4 items-start py-4 first:pt-0 cursor-pointer">
                 <div className="relative w-20 h-20 rounded-xl overflow-hidden shrink-0">

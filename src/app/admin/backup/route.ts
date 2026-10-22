@@ -2,7 +2,7 @@ import { requireAdmin } from "@/lib/admin/guard";
 
 export const dynamic = "force-dynamic";
 
-const TABLES = ["site_settings", "members", "programs", "events", "gallery", "articles", "contact_messages", "registrations"] as const;
+const TABLES = ["site_settings", "periods", "divisions", "members", "programs", "events", "gallery", "articles", "contact_messages", "registrations"] as const;
 
 /** Unduh cadangan seluruh konten sebagai satu berkas JSON. Hanya untuk admin. */
 export async function GET() {

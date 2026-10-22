@@ -32,7 +32,7 @@ export default function History({ name, history, timeline, founders }: HistoryPr
   const year = firstYear(timeline, history);
 
   return (
-    <section id="sejarah" className="relative overflow-hidden py-24 lg:py-32 bg-surface/70">
+    <section className="relative overflow-hidden py-24 lg:py-32 bg-surface/70">
       {year && (
         <span
           aria-hidden
@@ -51,7 +51,7 @@ export default function History({ name, history, timeline, founders }: HistoryPr
 
         {/* ---------- pembuka ---------- */}
         {paragraphs.length > 0 && (
-          <div className="reveal grid lg:grid-cols-[auto_1fr] gap-8 lg:gap-16 items-center soft-card !rounded-[28px] p-8 sm:p-12 hover:!translate-y-0">
+          <div data-a="up" className="grid lg:grid-cols-[auto_1fr] gap-8 lg:gap-16 items-center soft-card !rounded-[28px] p-8 sm:p-12 hover:!translate-y-0">
             {year && (
               <div className="text-center lg:text-left">
                 <p className="text-xs font-bold tracking-[0.25em] uppercase text-accent">Sejak</p>
@@ -69,11 +69,11 @@ export default function History({ name, history, timeline, founders }: HistoryPr
         {/* ---------- linimasa ---------- */}
         {timeline.length > 0 && (
           <div className="mt-20 lg:mt-28">
-            <h3 className="reveal flex items-center gap-3 text-sm font-bold tracking-[0.2em] uppercase text-primary mb-12">
+            <h3 data-a="up" className="flex items-center gap-3 text-sm font-bold tracking-[0.2em] uppercase text-primary mb-12">
               <CalendarDays size={18} className="text-accent" /> Perjalanan
             </h3>
 
-            <ol className="relative">
+            <ol data-scrub="0.7" className="relative">
               <span
                 aria-hidden
                 className="timeline-line absolute left-5 md:left-1/2 top-0 bottom-0 w-[3px] -translate-x-1/2 rounded-full bg-gradient-to-b from-primary via-accent-light to-sky/20"
@@ -95,7 +95,7 @@ export default function History({ name, history, timeline, founders }: HistoryPr
                     {/* tanggal besar di sisi seberang kartu (desktop) */}
                     <p
                       aria-hidden
-                      className={`reveal hidden md:block pt-6 text-3xl lg:text-4xl font-black tracking-tight text-primary/25 ${
+                      data-a="up" className={`hidden md:block pt-6 text-3xl lg:text-4xl font-black tracking-tight text-primary/25 ${
                         left ? "md:col-start-2 md:row-start-1 md:pl-4" : "md:col-start-1 md:row-start-1 md:text-right md:pr-4"
                       }`}
                     >
@@ -103,7 +103,7 @@ export default function History({ name, history, timeline, founders }: HistoryPr
                     </p>
 
                     <article
-                      className={`reveal md:row-start-1 soft-card p-6 sm:p-7 ${left ? "md:col-start-1 md:text-right" : "md:col-start-2"} ${last ? "ring-2 ring-accent/40" : ""}`}
+                      data-a="up" className={`md:row-start-1 soft-card p-6 sm:p-7 ${left ? "md:col-start-1 md:text-right" : "md:col-start-2"} ${last ? "ring-2 ring-accent/40" : ""}`}
                     >
                       <span className="inline-flex md:hidden items-center rounded-full bg-primary/10 text-primary text-xs font-bold px-3.5 py-1.5">
                         {t.date}
@@ -121,7 +121,7 @@ export default function History({ name, history, timeline, founders }: HistoryPr
         {/* ---------- penggagas ---------- */}
         {founders.length > 0 && (
           <div className="mt-24 lg:mt-32">
-            <div className="reveal text-center max-w-2xl mx-auto mb-12">
+            <div data-a="up" className="text-center max-w-2xl mx-auto mb-12">
               <p className="inline-flex items-center gap-2 text-xs font-bold tracking-[0.2em] uppercase text-accent">
                 <Users size={15} /> Para penggagas
               </p>
@@ -130,11 +130,11 @@ export default function History({ name, history, timeline, founders }: HistoryPr
               </h3>
             </div>
 
-            <ul className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+            <ul data-stagger="110" className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
               {founders.map((f, i) => (
                 <li
                   key={i}
-                  className={`reveal soft-card p-5 sm:p-7 text-center flex flex-col items-center ${f.role ? "ring-2 ring-accent/40" : ""}`}
+                  data-a="up" data-tilt className={`soft-card p-5 sm:p-7 text-center flex flex-col items-center ${f.role ? "ring-2 ring-accent/40" : ""}`}
                 >
                   <span className="w-20 h-20 rounded-full p-[3px] bg-brand-gradient shadow-lg shadow-blue-500/20">
                     <span className="w-full h-full rounded-full bg-white flex items-center justify-center text-xl font-black">

@@ -1,12 +1,8 @@
 "use client";
 
 import { useActionState, useState } from "react";
-import { ArrowRight, Eye, EyeOff, Loader2 } from "lucide-react";
+import { Eye, EyeOff, Loader2 } from "lucide-react";
 import { signIn } from "@/lib/admin/actions";
-
-const field =
-  "peer w-full bg-transparent border-0 border-b border-neutral-300 px-0 py-2.5 text-[15px] text-neutral-900 placeholder:text-neutral-300 focus:outline-none focus:border-primary focus:ring-0 transition-colors";
-const label = "block text-xs font-semibold tracking-wide uppercase text-neutral-500 mb-1 peer-focus:text-primary";
 
 export default function LoginForm({ notice }: { notice?: string }) {
   const [state, action, pending] = useActionState(signIn, undefined);
@@ -14,19 +10,22 @@ export default function LoginForm({ notice }: { notice?: string }) {
   const error = state?.error ?? notice;
 
   return (
-    <form action={action} className="space-y-7" noValidate={false}>
-      <div>
-        <label htmlFor="email" className={label}>Email</label>
-        <input id="email" name="email" type="email" required autoComplete="username" autoFocus placeholder="nama@email.com" className={field} />
-      </div>
-      <div>
-        <label htmlFor="password" className={label}>Kata sandi</label>
-        <div className="relative">
-          <input id="password" name="password" type={show ? "text" : "password"} required autoComplete="current-password" placeholder="••••••••" className={`${field} pr-10`} />
+    <form action={action} className="space-y-4">
+      <div className="ad-card overflow-hidden">
+        <label htmlFor="email" className="sr-only">Email</label>
+        <input
+          id="email" name="email" type="email" required autoComplete="username" autoFocus placeholder="Email"
+          className="block h-14 w-full bg-transparent px-4 text-[16px] outline-none placeholder:text-[#a1a1a6] focus:bg-[var(--ad-blue-soft)]/40"
+        />
+        <div className="relative border-t border-[var(--ad-line)]">
+          <label htmlFor="password" className="sr-only">Kata sandi</label>
+          <input
+            id="password" name="password" type={show ? "text" : "password"} required autoComplete="current-password" placeholder="Kata sandi"
+            className="block h-14 w-full bg-transparent px-4 pr-12 text-[16px] outline-none placeholder:text-[#a1a1a6] focus:bg-[var(--ad-blue-soft)]/40"
+          />
           <button
-            type="button"
-            onClick={() => setShow(!show)}
-            className="absolute right-0 top-1/2 -translate-y-1/2 p-1.5 text-neutral-400 hover:text-primary transition-colors"
+            type="button" onClick={() => setShow(!show)}
+            className="ad-icon-btn absolute right-2 top-1/2 -translate-y-1/2"
             aria-label={show ? "Sembunyikan kata sandi" : "Tampilkan kata sandi"}
           >
             {show ? <EyeOff size={18} /> : <Eye size={18} />}
@@ -34,18 +33,10 @@ export default function LoginForm({ notice }: { notice?: string }) {
         </div>
       </div>
 
-      {error && (
-        <p role="alert" className="text-sm text-red-700 border-l-2 border-red-500 bg-red-50/60 pl-3 py-2">
-          {error}
-        </p>
-      )}
+      {error && <p role="alert" className="rounded-[10px] bg-[var(--ad-red-soft)] px-3.5 py-2.5 text-[13.5px] text-[var(--ad-red)]">{error}</p>}
 
-      <button
-        disabled={pending}
-        className="group w-full h-12 rounded-lg bg-primary-dark hover:bg-primary text-white text-sm font-semibold inline-flex items-center justify-between px-5 transition-colors disabled:opacity-60 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
-      >
-        <span>{pending ? "Memeriksa…" : "Masuk ke dashboard"}</span>
-        {pending ? <Loader2 size={18} className="animate-spin" /> : <ArrowRight size={18} className="transition-transform group-hover:translate-x-1" />}
+      <button disabled={pending} className="ad-btn ad-btn-primary ad-btn-lg w-full">
+        {pending ? <><Loader2 size={18} className="animate-spin" /> Memeriksa…</> : "Masuk"}
       </button>
     </form>
   );

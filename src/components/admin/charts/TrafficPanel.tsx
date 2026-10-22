@@ -38,12 +38,12 @@ const niceMax = (v: number) => {
 };
 
 function Delta({ cur, prev }: { cur: number; prev: number }) {
-  if (prev === 0 && cur === 0) return <span className="text-xs text-neutral-400">belum ada data</span>;
-  if (prev === 0) return <span className="text-xs font-semibold text-sky-600">baru</span>;
+  if (prev === 0 && cur === 0) return <span className="text-[13px] text-[var(--ad-faint)]">belum ada data</span>;
+  if (prev === 0) return <span className="text-[13px] font-medium text-[var(--ad-blue)]">baru</span>;
   const pct = Math.round(((cur - prev) / prev) * 100);
   const Icon = pct > 0 ? ArrowUpRight : pct < 0 ? ArrowDownRight : Minus;
   return (
-    <span className={`inline-flex items-center gap-0.5 text-xs font-semibold ${pct > 0 ? "text-sky-600" : pct < 0 ? "text-amber-600" : "text-neutral-400"}`}>
+    <span className={`inline-flex items-center gap-0.5 text-[13px] font-medium ${pct > 0 ? "text-[var(--ad-blue)]" : "text-[var(--ad-mute)]"}`}>
       <Icon size={13} /> {pct > 0 ? "+" : ""}{pct}%
     </span>
   );
@@ -84,24 +84,24 @@ export default function TrafficPanel({ daily }: { daily: DayStat[] }) {
       <div className="flex flex-wrap items-start justify-between gap-x-8 gap-y-4">
         <div className="flex gap-8 sm:gap-10">
           <div>
-            <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-neutral-400"><span className="w-2.5 h-0.5 rounded bg-accent" />Tampilan halaman</p>
-            <p className="mt-1 text-3xl font-extrabold text-primary-dark tabular-nums">{nf.format(views)}</p>
+            <p className="flex items-center gap-2 text-[13px] font-medium text-[var(--ad-mute)]"><span className="h-0.5 w-3 rounded bg-[#0071e3]" />Tampilan halaman</p>
+            <p className="mt-1 text-[30px] font-semibold leading-tight tracking-tight tnum">{nf.format(views)}</p>
             <Delta cur={views} prev={sum(prev, "views")} />
           </div>
           <div>
-            <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-neutral-400"><span className="w-2.5 h-0.5 rounded bg-cyan-400" />Pengunjung</p>
-            <p className="mt-1 text-3xl font-extrabold text-primary-dark tabular-nums">{nf.format(visitors)}</p>
+            <p className="flex items-center gap-2 text-[13px] font-medium text-[var(--ad-mute)]"><span className="h-0.5 w-3 rounded bg-[#5ac8fa]" />Pengunjung</p>
+            <p className="mt-1 text-[30px] font-semibold leading-tight tracking-tight tnum">{nf.format(visitors)}</p>
             <Delta cur={visitors} prev={sum(prev, "visitors")} />
           </div>
         </div>
-        <div role="tablist" aria-label="Rentang waktu" className="inline-flex rounded-lg bg-surface p-1 text-sm">
+        <div role="tablist" aria-label="Rentang waktu" className="ad-seg">
           {RANGES.map((r) => (
             <button
               key={r}
               role="tab"
               aria-selected={range === r}
               onClick={() => { setRange(r); setHover(null); }}
-              className={`px-3 py-1.5 rounded-md font-medium transition ${range === r ? "bg-white text-primary shadow-sm" : "text-neutral-500 hover:text-neutral-800"}`}
+              className=""
             >
               {r} hari
             </button>
@@ -110,40 +110,40 @@ export default function TrafficPanel({ daily }: { daily: DayStat[] }) {
       </div>
 
       <div className="mt-6 flex gap-3">
-        <div className="relative h-52 sm:h-60 w-8 shrink-0 text-[11px] text-neutral-400 tabular-nums" aria-hidden>
+        <div className="relative h-52 sm:h-60 w-8 shrink-0 text-[11px] text-[var(--ad-faint)] tnum" aria-hidden>
           {ticks.map((t, i) => <span key={i} className="absolute right-0 -translate-y-1/2" style={{ top: `${i * 25}%` }}>{t >= 1000 ? `${t / 1000}k` : t}</span>)}
         </div>
         <div className="flex-1 min-w-0">
           <div className="relative h-52 sm:h-60 touch-pan-y" onPointerMove={onMove} onPointerLeave={() => setHover(null)} onPointerDown={onMove}>
-            {ticks.map((_, i) => <div key={i} className="absolute inset-x-0 border-t border-dashed border-border" style={{ top: `${i * 25}%` }} />)}
+            {ticks.map((_, i) => <div key={i} className="absolute inset-x-0 border-t border-[var(--ad-line)]" style={{ top: `${i * 25}%` }} />)}
             <svg viewBox="0 0 100 100" preserveAspectRatio="none" className="absolute inset-0 w-full h-full overflow-visible" role="img" aria-label={`Grafik tampilan halaman ${range} hari terakhir`}>
               <defs>
                 <linearGradient id={`g${gid}`} x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#2f6fd0" stopOpacity="0.32" />
-                  <stop offset="100%" stopColor="#2f6fd0" stopOpacity="0" />
+                  <stop offset="0%" stopColor="#0071e3" stopOpacity="0.2" />
+                  <stop offset="100%" stopColor="#0071e3" stopOpacity="0" />
                 </linearGradient>
               </defs>
               <path d={area} fill={`url(#g${gid})`} />
-              <path d={smooth(uPts)} fill="none" stroke="#22d3ee" strokeWidth="2" vectorEffect="non-scaling-stroke" strokeLinecap="round" />
-              <path d={line} fill="none" stroke="#1e6fd9" strokeWidth="2.25" vectorEffect="non-scaling-stroke" strokeLinecap="round" />
-              {active && <line x1={X(hover!)} x2={X(hover!)} y1="0" y2="100" stroke="#1e4fa3" strokeOpacity="0.35" strokeWidth="1" vectorEffect="non-scaling-stroke" />}
+              <path d={smooth(uPts)} fill="none" stroke="#5ac8fa" strokeWidth="2" vectorEffect="non-scaling-stroke" strokeLinecap="round" />
+              <path d={line} fill="none" stroke="#0071e3" strokeWidth="2.25" vectorEffect="non-scaling-stroke" strokeLinecap="round" />
+              {active && <line x1={X(hover!)} x2={X(hover!)} y1="0" y2="100" stroke="#1d1d1f" strokeOpacity="0.25" strokeWidth="1" vectorEffect="non-scaling-stroke" />}
             </svg>
             {active && (
               <>
-                <span className="absolute w-3 h-3 rounded-full bg-accent ring-2 ring-white -translate-x-1/2 -translate-y-1/2 pointer-events-none" style={{ left: `${X(hover!)}%`, top: `${Y(active.views)}%` }} />
-                <span className="absolute w-3 h-3 rounded-full bg-cyan-400 ring-2 ring-white -translate-x-1/2 -translate-y-1/2 pointer-events-none" style={{ left: `${X(hover!)}%`, top: `${Y(active.visitors)}%` }} />
+                <span className="absolute w-3 h-3 rounded-full bg-[#0071e3] ring-2 ring-white -translate-x-1/2 -translate-y-1/2 pointer-events-none" style={{ left: `${X(hover!)}%`, top: `${Y(active.views)}%` }} />
+                <span className="absolute w-3 h-3 rounded-full bg-[#5ac8fa] ring-2 ring-white -translate-x-1/2 -translate-y-1/2 pointer-events-none" style={{ left: `${X(hover!)}%`, top: `${Y(active.visitors)}%` }} />
                 <div
-                  className="absolute top-0 z-10 pointer-events-none rounded-lg bg-primary-dark text-white text-xs px-3 py-2 shadow-xl whitespace-nowrap"
+                  className="absolute top-0 z-10 pointer-events-none rounded-[10px] bg-[rgba(29,29,31,0.94)] text-white text-[12.5px] px-3 py-2 shadow-xl whitespace-nowrap backdrop-blur"
                   style={{ left: `${X(hover!)}%`, transform: `translateX(${X(hover!) > 70 ? "calc(-100% - 12px)" : "12px"})` }}
                 >
                   <p className="font-semibold">{longDate(active.day)}</p>
-                  <p className="mt-1 flex items-center gap-2"><span className="w-2 h-2 rounded-full bg-accent-light" />{nf.format(active.views)} tampilan</p>
-                  <p className="flex items-center gap-2"><span className="w-2 h-2 rounded-full bg-cyan-300" />{nf.format(active.visitors)} pengunjung</p>
+                  <p className="mt-1 flex items-center gap-2"><span className="w-2 h-2 rounded-full bg-[#4da3ff]" />{nf.format(active.views)} tampilan</p>
+                  <p className="flex items-center gap-2"><span className="w-2 h-2 rounded-full bg-[#5ac8fa]" />{nf.format(active.visitors)} pengunjung</p>
                 </div>
               </>
             )}
           </div>
-          <div className="relative h-5 mt-2 text-[11px] text-neutral-400" aria-hidden>
+          <div className="relative h-5 mt-2 text-[11px] text-[var(--ad-faint)]" aria-hidden>
             {xLabels.map(({ i, d }) => (
               <span key={d.day} className="absolute whitespace-nowrap" style={{ left: `${X(i)}%`, transform: i === n - 1 ? "translateX(-100%)" : i === 0 ? "none" : "translateX(-50%)" }}>{shortDate(d.day)}</span>
             ))}

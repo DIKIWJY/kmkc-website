@@ -1,4 +1,5 @@
 import Photo from "@/components/ui/Photo";
+import Paged from "@/components/ui/Paged";
 import { formatDateID } from "@/lib/date";
 import type { GalleryItem } from "@/lib/types";
 
@@ -24,15 +25,15 @@ function Figure({ g }: { g: GalleryItem }) {
 }
 
 /**
- * Arsip kegiatan lama: statis (tanpa animasi, tanpa JS), dikelompokkan per tahun.
- * Tahun besar di kiri, foto kecil di kanan; foto di luar 8 teratas dilipat dengan <details>.
+ * Arsip kegiatan lama: tanpa animasi, dikelompokkan per tahun.
+ * Tahun besar di kiri, foto kecil di kanan; foto di luar 8 teratas dilipat dengan <details>; 3 tahun per halaman.
  */
 export default function GalleryArchive({ years }: { years: { year: string; items: GalleryItem[] }[] }) {
   if (years.length === 0) return null;
   const total = years.reduce((a, y) => a + y.items.length, 0);
 
   return (
-    <section id="arsip" aria-labelledby="arsip-judul" className="py-20 lg:py-28 border-t border-border/70 bg-white/60">
+    <section aria-labelledby="arsip-judul" className="py-20 lg:py-28 border-t border-border/70 bg-white/60">
       <div className="max-w-7xl mx-auto px-6 sm:px-10">
         <div className="flex flex-wrap items-end justify-between gap-4 mb-12 lg:mb-16">
           <div>
@@ -44,7 +45,7 @@ export default function GalleryArchive({ years }: { years: { year: string; items
           </p>
         </div>
 
-        <div className="divide-y divide-border/70">
+        <Paged size={3} param="arsip" noun="tahun" className="divide-y divide-border/70">
           {years.map(({ year, items }) => (
             <div key={year} className="py-10 lg:py-12 grid lg:grid-cols-[11rem_minmax(0,1fr)] gap-6 lg:gap-12 first:pt-0">
               <div className="lg:sticky lg:top-28 self-start">
@@ -69,7 +70,7 @@ export default function GalleryArchive({ years }: { years: { year: string; items
               </div>
             </div>
           ))}
-        </div>
+        </Paged>
       </div>
     </section>
   );

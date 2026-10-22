@@ -1,9 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Analytics } from "@vercel/analytics/next";
-import "@fontsource-variable/montserrat";
-import "@fontsource/poppins/400.css";
-import "@fontsource/poppins/500.css";
-import "@fontsource/poppins/600.css";
+import "@fontsource-variable/plus-jakarta-sans";
 import "./globals.css";
 import Tracker from "@/components/Tracker";
 import { SITE_URL } from "@/lib/supabase/env";
@@ -26,10 +23,17 @@ export const viewport: Viewport = { themeColor: "#1e4fa3" };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="id" className="h-full antialiased">
+    <html lang="id" className="h-full antialiased" suppressHydrationWarning>
+      <head>
+        {/* Menyalakan mode animasi sebelum cat pertama (tanpa kedip). Mati bila pengguna memilih "kurangi gerakan". */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html:
+              "(function(){var d=document.documentElement;try{if(matchMedia('(prefers-reduced-motion: reduce)').matches)return;d.classList.add('m');if(location.pathname==='/'&&!sessionStorage.getItem('kmkc-i')){sessionStorage.setItem('kmkc-i','1');d.classList.add('m-intro')}setTimeout(function(){if(!window.__m)d.classList.remove('m','m-intro')},5000)}catch(e){}})()",
+          }}
+        />
+      </head>
       <body className="min-h-full flex flex-col font-sans">
-        <a href="#konten" className="skip-link">Lompat ke konten</a>
-        <div className="scroll-progress" aria-hidden />
         {children}
         <Tracker />
         <Analytics />

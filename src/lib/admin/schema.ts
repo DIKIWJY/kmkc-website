@@ -4,7 +4,7 @@
  *  - whitelist kolom + validasi di Server Actions (server)
  */
 
-export type FieldType = "text" | "textarea" | "markdown" | "select" | "date" | "image" | "toggle" | "number" | "slug" | "url";
+export type FieldType = "text" | "textarea" | "markdown" | "select" | "date" | "image" | "toggle" | "number" | "slug" | "url" | "proof";
 
 export interface Field {
   name: string;
@@ -22,7 +22,7 @@ export interface Field {
   toggleLabels?: [string, string]; // teks saklar: [aktif, nonaktif]; bawaan Terbit/Draft
 }
 
-export type ColumnType = "text" | "image" | "badge" | "date" | "bool";
+export type ColumnType = "text" | "image" | "badge" | "date" | "bool" | "money";
 
 export interface Column {
   key: string;
@@ -92,7 +92,7 @@ export const RESOURCES: Record<string, Resource> = {
     order: { col: "order_index", asc: true },
     reorder: true,
     defaults: { period: "2025/2026" },
-    revalidate: ["/"],
+    revalidate: ["/", "/kepengurusan"],
     imageFields: ["photo_url"],
   },
   programs: {
@@ -120,7 +120,7 @@ export const RESOURCES: Record<string, Resource> = {
     searchFields: ["name", "division", "description"],
     order: { col: "created_at", asc: false },
     defaults: { status: "upcoming", icon: "briefcase", period: "2025/2026" },
-    revalidate: ["/"],
+    revalidate: ["/", "/program-kerja"],
     imageFields: [],
   },
   gallery: {
@@ -154,7 +154,7 @@ export const RESOURCES: Record<string, Resource> = {
     order: { col: "event_date", asc: false, then: { col: "created_at", asc: false } },
     bulkImage: { field: "image_url", titleField: "title" },
     defaults: { category: "Acara", visible: true, featured: false },
-    revalidate: ["/"],
+    revalidate: ["/", "/galeri"],
     imageFields: ["image_url"],
   },
   events: {
@@ -162,7 +162,7 @@ export const RESOURCES: Record<string, Resource> = {
     table: "events",
     title: "Agenda Kegiatan",
     singular: "Agenda",
-    description: "Jadwal kegiatan mendatang. Agenda yang sudah lewat otomatis hilang dari website.",
+    description: "Jadwal kegiatan. Agenda yang tanggalnya sudah lewat otomatis pindah ke daftar “Telah berlalu” di halaman Agenda.",
     fields: [
       { name: "cover_image", label: "Gambar / poster (opsional)", type: "image", folder: "events", maxSize: 1600 },
       { name: "title", label: "Nama kegiatan", type: "text", required: true, max: 160 },
@@ -182,7 +182,7 @@ export const RESOURCES: Record<string, Resource> = {
     searchFields: ["title", "location", "description"],
     order: { col: "event_date", asc: false },
     defaults: {},
-    revalidate: ["/"],
+    revalidate: ["/", "/agenda"],
     imageFields: ["cover_image"],
   },
   articles: {
@@ -212,7 +212,7 @@ export const RESOURCES: Record<string, Resource> = {
     searchFields: ["title", "excerpt", "author", "category"],
     order: { col: "created_at", asc: false },
     defaults: { published: false, category: "Pengumuman" },
-    revalidate: ["/", "/berita/[slug]", "/sitemap.xml"],
+    revalidate: ["/", "/berita", "/berita/[slug]", "/sitemap.xml", "/feed.xml"],
     imageFields: ["cover_image"],
   },
   registrations: {
@@ -220,7 +220,7 @@ export const RESOURCES: Record<string, Resource> = {
     table: "registrations",
     title: "Pendaftar Anggota",
     singular: "Pendaftar",
-    description: "Pendaftaran dari halaman /daftar. Ubah status saat sudah dihubungi, lalu unduh sebagai CSV bila perlu.",
+    description: "Masuk dari halaman /daftar bersama bukti follow Instagram dan bukti bayar HTM. Ubah status setelah dihubungi, lalu unduh CSV atau buat laporan PDF.",
     fields: [
       { name: "full_name", label: "Nama lengkap", type: "text", required: true, max: 120 },
       { name: "phone", label: "WhatsApp", type: "text", required: true, half: true, max: 24 },
@@ -229,7 +229,10 @@ export const RESOURCES: Record<string, Resource> = {
       { name: "batch", label: "Angkatan", type: "text", half: true, max: 20 },
       { name: "campus", label: "Perguruan tinggi", type: "text", half: true, max: 160 },
       { name: "major", label: "Program studi", type: "text", half: true, max: 160 },
-      { name: "message", label: "Pesan pendaftar", type: "textarea", max: 1000 },
+      { name: "message", label: "Alasan bergabung", type: "textarea", max: 1000 },
+      { name: "follow_proof", label: "Bukti follow Instagram", type: "proof", help: "Diunggah pendaftar. Hanya admin yang bisa melihat." },
+      { name: "payment_proof", label: "Bukti pembayaran HTM", type: "proof", help: "Diunggah pendaftar bila HTM berlaku. Periksa nominal dan tanggalnya." },
+      { name: "fee_amount", label: "Nominal HTM (Rp)", type: "number", half: true, help: "Nominal yang berlaku saat pendaftar mengirim formulir." },
       {
         name: "status", label: "Status", type: "select", required: true, half: true,
         options: [{ value: "baru", label: "Baru" }, { value: "dihubungi", label: "Sudah dihubungi" }, { value: "diterima", label: "Diterima" }, { value: "ditolak", label: "Ditolak" }],
@@ -240,11 +243,13 @@ export const RESOURCES: Record<string, Resource> = {
       { key: "full_name", label: "Nama", sub: "phone" },
       { key: "campus", label: "Kampus", sub: "major" },
       { key: "village", label: "Desa" },
+      { key: "follow_proof", label: "Bukti IG", type: "bool", boolLabels: ["Ada", "Belum"] },
+      { key: "fee_amount", label: "HTM", type: "money" },
       { key: "status", label: "Status", type: "badge" },
       { key: "created_at", label: "Masuk", type: "date" },
     ],
     labelField: "full_name",
-    searchFields: ["full_name", "phone", "campus", "village", "major"],
+    searchFields: ["full_name", "phone", "campus", "village", "major", "message"],
     order: { col: "created_at", asc: false },
     defaults: { status: "baru" },
     revalidate: [],

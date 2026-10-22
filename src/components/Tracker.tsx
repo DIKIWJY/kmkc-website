@@ -17,6 +17,8 @@ export default function Tracker() {
   const last = useRef<string | null>(null);
 
   useEffect(() => {
+    // Mode `npm run dev` (komputer sendiri) tidak dihitung agar statistik asli tidak tercampur.
+    if (process.env.NODE_ENV === "development") return;
     if (!pathname || pathname.startsWith("/admin") || last.current === pathname) return;
     if (navigator.doNotTrack === "1") return;
     last.current = pathname;
