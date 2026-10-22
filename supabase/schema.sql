@@ -51,6 +51,21 @@ create table if not exists public.site_settings (
 alter table public.site_settings add column if not exists history text not null default '';
 alter table public.site_settings add column if not exists founders jsonb not null default '[]';
 alter table public.site_settings add column if not exists timeline jsonb not null default '[]';
+-- Pendaftaran anggota: buka/tutup, mode formulir (bawaan web atau Google Form)
+alter table public.site_settings add column if not exists registration_open boolean not null default true;
+alter table public.site_settings add column if not exists registration_mode text not null default 'builtin';
+alter table public.site_settings add column if not exists gform_url text not null default '';
+alter table public.site_settings add column if not exists registration_note text not null default '';
+do $$ begin
+  alter table public.site_settings add constraint site_settings_reg_mode_chk check (registration_mode in ('builtin','gform'));
+exception when duplicate_object then null; end $$;
+-- HTM: nominal dalam rupiah (0 = tanpa HTM), petunjuk pembayaran (rekening / e-wallet), dan gambar QRIS opsional
+alter table public.site_settings add column if not exists registration_fee integer not null default 0;
+alter table public.site_settings add column if not exists payment_info text not null default '';
+alter table public.site_settings add column if not exists payment_qr text not null default '';
+do $$ begin
+  alter table public.site_settings add constraint site_settings_fee_chk check (registration_fee between 0 and 10000000);
+exception when duplicate_object then null; end $$;
 
 -- ---------- 3. Konten ----------
 create table if not exists public.members (
@@ -63,6 +78,39 @@ create table if not exists public.members (
   order_index int not null default 0,
   created_at timestamptz not null default now()
 );
+
+-- Struktur kepengurusan (v11): setiap PERIODE punya susunan BIDANG/DEPARTEMEN sendiri, dan tiap bidang berisi pengurus dengan jabatan bebas.
+create table if not exists public.periods (
+  label text primary key check (char_length(label) between 1 and 40),
+  is_current boolean not null default false,
+  created_at timestamptz not null default now()
+);
+create unique index if not exists periods_one_current on public.periods (is_current) where is_current;
+
+create table if not exists public.divisions (
+  id uuid primary key default gen_random_uuid(),
+  period text not null references public.periods (label) on update cascade on delete cascade,
+  name text not null check (char_length(name) between 1 and 100),
+  description text not null default '' check (char_length(description) <= 300),
+  order_index int not null default 0,
+  created_at timestamptz not null default now(),
+  unique (period, name)
+);
+
+-- Data pengurus lama (v10 ke bawah) otomatis dipindah ke struktur baru. Aman diulang.
+update public.members set period = '2025/2026' where period = '';
+update public.members set division = 'Umum' where division = '';
+insert into public.periods (label) select distinct period from public.members on conflict do nothing;
+insert into public.divisions (period, name, order_index)
+  select period, division, min(order_index) from public.members group by period, division on conflict do nothing;
+update public.periods set is_current = true
+  where label = (select label from public.periods order by label desc limit 1)
+    and not exists (select 1 from public.periods where is_current);
+-- Satu bidang dihapus → pengurus di dalamnya ikut terhapus; nama bidang/periode diubah → pengurus ikut mengikuti.
+do $$ begin
+  alter table public.members add constraint members_division_fk
+    foreign key (period, division) references public.divisions (period, name) on update cascade on delete cascade;
+exception when duplicate_object then null; end $$;
 
 create table if not exists public.programs (
   id uuid primary key default gen_random_uuid(),
@@ -152,6 +200,12 @@ create table if not exists public.registrations (
   note text not null default '' check (char_length(note) <= 1000),
   created_at timestamptz not null default now()
 );
+-- Nama berkas bukti follow Instagram di bucket privat "bukti" (UUID.webp)
+alter table public.registrations add column if not exists follow_proof text not null default '';
+-- HTM (biaya pendaftaran) & bukti pembayaran. Nominal diatur admin di Pengaturan (0 = tanpa HTM).
+-- fee_amount menyimpan nominal HTM saat pendaftar mengirim formulir, jadi tidak berubah bila HTM diganti kemudian.
+alter table public.registrations add column if not exists payment_proof text not null default '';
+alter table public.registrations add column if not exists fee_amount integer not null default 0 check (fee_amount >= 0);
 create index if not exists registrations_created_idx on public.registrations (created_at desc);
 
 -- Statistik pengunjung ringan & ramah privasi: hanya agregat harian, tanpa IP/cookie pelacak.
@@ -220,8 +274,33 @@ $$;
 revoke all on function public.admin_stats(integer) from public;
 grant execute on function public.admin_stats(integer) to authenticated;
 
+-- Ringkasan pemakaian penyimpanan (untuk halaman Arsip). Hanya admin.
+create or replace function public.admin_usage()
+returns jsonb
+language plpgsql
+stable
+security definer
+set search_path = public, storage
+as $$
+begin
+  if not public.is_admin() then
+    raise exception 'forbidden' using errcode = '42501';
+  end if;
+  return jsonb_build_object(
+    'db_bytes', pg_database_size(current_database()),
+    'buckets', coalesce((select jsonb_agg(jsonb_build_object('bucket', bucket_id, 'files', n, 'bytes', b))
+                         from (select bucket_id, count(*)::int n, coalesce(sum((metadata->>'size')::bigint), 0)::bigint b
+                               from storage.objects group by bucket_id) x), '[]'::jsonb)
+  );
+end;
+$$;
+revoke all on function public.admin_usage() from public;
+grant execute on function public.admin_usage() to authenticated;
+
 create index if not exists events_date_idx on public.events (event_date);
 create index if not exists members_order_idx on public.members (order_index);
+create index if not exists members_group_idx on public.members (period, division, order_index);
+create index if not exists divisions_period_idx on public.divisions (period, order_index);
 create index if not exists gallery_date_idx on public.gallery (event_date desc);
 create index if not exists articles_pub_idx on public.articles (published, published_at desc);
 create index if not exists messages_created_idx on public.contact_messages (created_at desc);
@@ -230,6 +309,8 @@ create index if not exists messages_created_idx on public.contact_messages (crea
 alter table public.admins            enable row level security;
 alter table public.site_settings     enable row level security;
 alter table public.members           enable row level security;
+alter table public.periods           enable row level security;
+alter table public.divisions         enable row level security;
 alter table public.programs          enable row level security;
 alter table public.gallery           enable row level security;
 alter table public.events            enable row level security;
@@ -245,15 +326,20 @@ declare r record;
 begin
   for r in select schemaname, tablename, policyname from pg_policies
            where schemaname = 'public'
-             and tablename in ('admins','site_settings','members','programs','gallery','events','articles','contact_messages','audit_log','registrations','daily_stats')
+             and tablename in ('admins','site_settings','members','periods','divisions','programs','gallery','events','articles','contact_messages','audit_log','registrations','daily_stats')
   loop
     execute format('drop policy if exists %I on %I.%I', r.policyname, r.schemaname, r.tablename);
   end loop;
 end $$;
 
+-- v11: alur status verifikasi pembayaran dihapus. Kolom lama (v10) dibuang setelah policy yang memakainya terhapus.
+alter table public.registrations drop column if exists payment_status;
+
 -- Publik: hanya boleh BACA konten
 create policy "public read settings" on public.site_settings for select using (true);
 create policy "public read members"  on public.members  for select using (true);
+create policy "public read periods"  on public.periods  for select using (true);
+create policy "public read divisions" on public.divisions for select using (true);
 create policy "public read programs" on public.programs for select using (true);
 create policy "public read gallery"  on public.gallery  for select using (visible = true or public.is_admin());
 create policy "public read events"   on public.events   for select using (true);
@@ -266,6 +352,8 @@ create policy "public send message" on public.contact_messages for insert
 -- Admin: akses penuh
 create policy "admin all settings" on public.site_settings for all using (public.is_admin()) with check (public.is_admin());
 create policy "admin all members"  on public.members  for all using (public.is_admin()) with check (public.is_admin());
+create policy "admin all periods"  on public.periods  for all using (public.is_admin()) with check (public.is_admin());
+create policy "admin all divisions" on public.divisions for all using (public.is_admin()) with check (public.is_admin());
 create policy "admin all programs" on public.programs for all using (public.is_admin()) with check (public.is_admin());
 create policy "admin all gallery"  on public.gallery  for all using (public.is_admin()) with check (public.is_admin());
 create policy "admin all events"   on public.events   for all using (public.is_admin()) with check (public.is_admin());
@@ -273,8 +361,17 @@ create policy "admin all articles" on public.articles for all using (public.is_a
 create policy "admin all messages" on public.contact_messages for all using (public.is_admin()) with check (public.is_admin());
 create policy "admin read audit"   on public.audit_log for select using (public.is_admin());
 create policy "admin write audit"  on public.audit_log for insert with check (public.is_admin());
+-- Pendaftar publik hanya boleh mengirim status "baru". Bila HTM > 0, bukti bayar wajib ada (format nama berkas UUID);
+-- bila HTM = 0, bukti bayar harus kosong.
 create policy "public register" on public.registrations for insert
-  to anon, authenticated with check (status = 'baru' and note = '');
+  to anon, authenticated with check (
+    status = 'baru' and note = ''
+    and (follow_proof = '' or follow_proof ~ '^[0-9a-f-]{36}\.(jpg|jpeg|png|webp)$')
+    and (
+      (coalesce((select registration_fee from public.site_settings where id = 1), 0) = 0 and payment_proof = '' and fee_amount = 0)
+      or (coalesce((select registration_fee from public.site_settings where id = 1), 0) > 0 and payment_proof ~ '^[0-9a-f-]{36}\.(jpg|jpeg|png|webp)$' and fee_amount > 0)
+    )
+  );
 create policy "admin all registrations" on public.registrations for all using (public.is_admin()) with check (public.is_admin());
 create policy "admin read stats" on public.daily_stats for select using (public.is_admin());
 create policy "admin read self"    on public.admins for select using (user_id = auth.uid());
@@ -296,8 +393,26 @@ create policy "media admin update" on storage.objects for update to authenticate
 create policy "media admin delete" on storage.objects for delete to authenticated
   using (bucket_id = 'media' and public.is_admin());
 
+-- Bucket PRIVAT untuk bukti follow Instagram pendaftar: anonim hanya boleh MENGUNGGAH (nama berkas UUID),
+-- tidak bisa membaca/mendaftar isinya; hanya admin yang bisa melihat dan menghapus.
+insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+values ('bukti', 'bukti', false, 1048576, array['image/jpeg','image/png','image/webp'])
+on conflict (id) do update
+  set public = false, file_size_limit = 1048576,
+      allowed_mime_types = array['image/jpeg','image/png','image/webp'];
+
+drop policy if exists "bukti anon insert" on storage.objects;
+drop policy if exists "bukti admin read" on storage.objects;
+drop policy if exists "bukti admin delete" on storage.objects;
+create policy "bukti anon insert" on storage.objects for insert to anon, authenticated
+  with check (bucket_id = 'bukti' and name ~ '^[0-9a-f-]{36}\.(jpg|jpeg|png|webp)$');
+create policy "bukti admin read" on storage.objects for select to authenticated
+  using (bucket_id = 'bukti' and public.is_admin());
+create policy "bukti admin delete" on storage.objects for delete to authenticated
+  using (bucket_id = 'bukti' and public.is_admin());
+
 -- ---------- 7. Data awal pengaturan ----------
-insert into public.site_settings (id, name, full_name, tagline, about, vision, mission, stats, history, founders, timeline, email, phone, address, instagram)
+insert into public.site_settings (id, name, full_name, tagline, about, vision, mission, stats, history, founders, timeline, email, phone, address, instagram, tiktok, whatsapp)
 values (
   1,
   'KMKC',
@@ -317,7 +432,7 @@ values (
   E'**KMKC** dilahirkan pada **Musyawarah Besar perdana** tanggal **27 Januari 2008** di Taman Bacaan Masyarakat Desa Cempaka, dihadiri tidak kurang dari **50 mahasiswa** dari **13 desa** di Kecamatan Cempaka. Berawal dari obrolan ringan para mahasiswa di perantauan, lahirlah rumah bersama yang terus tumbuh hingga hari ini.',
   '[{"name": "Ardiansyah", "campus": "FKIP Unsri"}, {"name": "Rafelta Tuska Putra", "campus": "FP Unsri", "role": "Ketua Umum pertama"}, {"name": "Agus Sai", "campus": "FT Unsri"}, {"name": "Herianto", "campus": "FT Unsri"}, {"name": "Beni Wirayudha", "campus": "FP Unsri"}, {"name": "Novaria Pajrini", "campus": "FH Unsri"}, {"name": "Putri Eka Sevtiyuni", "campus": "Fasilkom Unsri"}, {"name": "Lisa Selpiyani", "campus": "FE Unsri"}]'::jsonb,
     '[{"date": "Sebelum Januari 2008", "title": "Gagasan lahir dari obrolan reuni", "desc": "Bincang-bincang ringan di beberapa reuni mahasiswa Cempaka memunculkan keinginan untuk punya wadah bersama di perantauan."}, {"date": "20 Januari 2008", "title": "Pertemuan persiapan pembentukan", "desc": "Digelar pertemuan persiapan pembentukan **Himpunan Mahasiswa Cempaka** (nama awal) di rumah kos seorang kawan. Di sinilah disepakati nama **Keluarga Mahasiswa Kecamatan Cempaka (KMKC)**."}, {"date": "20 – 27 Januari 2008", "title": "Delapan penggagas merumuskan ide", "desc": "Delapan mahasiswa memformulasikan gagasan tersebut hingga disepakati Musyawarah Besar seminggu setelahnya."}, {"date": "27 Januari 2008", "title": "Musyawarah Besar perdana", "desc": "Bertempat di Taman Bacaan Masyarakat Desa Cempaka, dihadiri tidak kurang dari **50 mahasiswa** dari **13 desa** di Kecamatan Cempaka."}, {"date": "27 Januari 2008", "title": "AD/ART disahkan, Ketua Umum pertama terpilih", "desc": "Forum merumuskan **AD/ART** organisasi dan memilih **Rafelta Tuska Putra** sebagai Ketua Umum pertama KMKC."}]'::jsonb,
-  'kmkc@example.com', '', 'Kecamatan Cempaka', ''
+  'kmkcjayajaya@gmail.com', '', 'TPA Sija Carana', 'https://www.instagram.com/kmkc.id', 'https://www.tiktok.com/@kmkc_18', 'https://wa.me/qr/VPQNDHKWIN6VC1'
 )
 on conflict (id) do nothing;
 

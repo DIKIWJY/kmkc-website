@@ -13,6 +13,19 @@ const supabase = (() => {
 const nextConfig: NextConfig = {
   poweredByHeader: false,
   images: { remotePatterns: supabase, formats: ["image/avif", "image/webp"], minimumCacheTTL: 60 * 60 * 24 * 30 },
+  // Alias yang mudah diingat → rute sebenarnya. /login adalah jalan pintas masuk admin.
+  async redirects() {
+    const to = (destination: string, ...sources: string[]) => sources.map((source) => ({ source, destination, permanent: false }));
+    return [
+      ...to("/admin/login", "/login", "/masuk", "/admin-login"),
+      ...to("/tentang", "/sejarah", "/visi-misi", "/about"),
+      ...to("/kepengurusan", "/struktur", "/pengurus"),
+      ...to("/program-kerja", "/program"),
+      ...to("/galeri", "/gallery"),
+      ...to("/kontak", "/contact", "/hubungi-kami"),
+      ...to("/daftar", "/gabung", "/register"),
+    ];
+  },
   async headers() {
     return [
       {
