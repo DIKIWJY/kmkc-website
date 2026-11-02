@@ -73,7 +73,6 @@ export default function Hero({ name, fullName, tagline, stats, photos, nextEvent
           <Link
             href="/daftar"
             data-magnetic
-            data-cursor="Daftar"
             className="group inline-flex h-12 items-center gap-2.5 rounded-full bg-white pl-7 pr-6 text-sm font-bold text-[#0b2a63] shadow-[0_12px_40px_-10px_rgba(56,189,248,.6)] transition hover:bg-sky-100"
           >
             Gabung jadi anggota

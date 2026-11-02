@@ -100,12 +100,12 @@ export default function CommandPalette() {
         type="button"
         onClick={() => setOpen(true)}
         data-testid="palette-open"
-        className="hidden sm:inline-flex items-center gap-2.5 h-9 w-72 rounded-[10px] bg-[var(--ad-fill)] hover:bg-[var(--ad-fill-hover)] px-3 text-[14px] text-[var(--ad-faint)] transition-colors"
+        className="hidden sm:inline-flex items-center gap-2.5 h-9 w-64 rounded-[10px] bg-white px-3 text-[13.5px] text-[var(--ad-faint)] shadow-[0_0_0_1px_rgba(15,30,70,0.08),0_1px_2px_rgba(15,30,70,0.04)] transition-shadow hover:shadow-[0_0_0_1px_rgba(0,113,227,0.35),0_4px_14px_-6px_rgba(0,113,227,0.35)]"
       >
-        <Search size={15} /> <span className="flex-1 text-left">Cari</span>
-        <kbd className="text-[11px] font-medium rounded-md bg-white/80 px-1.5 py-0.5 text-[var(--ad-mute)] shadow-[0_0_0_0.5px_rgba(0,0,0,0.12)]">Ctrl K</kbd>
+        <Search size={15} /> <span className="flex-1 text-left">Cari apa saja…</span>
+        <kbd className="text-[11px] font-medium rounded-md bg-[var(--ad-fill)] px-1.5 py-0.5 text-[var(--ad-mute)]">Ctrl K</kbd>
       </button>
-      <button type="button" onClick={() => setOpen(true)} className="ad-icon-btn sm:hidden ml-auto" aria-label="Cari"><Search size={19} /></button>
+      <button type="button" onClick={() => setOpen(true)} className="ad-icon-btn sm:hidden" aria-label="Cari"><Search size={19} /></button>
 
       {open && (
         <div className="fixed inset-0 z-[80] flex items-start justify-center px-3 pt-[9vh] sm:pt-[13vh]" role="dialog" aria-modal="true" aria-label="Pencarian cepat">

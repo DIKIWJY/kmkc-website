@@ -66,7 +66,7 @@ export default function SettingsForm({ initial, children }: { initial: SiteSetti
   }
 
   return (
-    <form onSubmit={submit} className="mx-auto max-w-3xl space-y-8 pb-24">
+    <form onSubmit={submit} className="max-w-3xl space-y-8 pb-24">
       <PageHeader title="Pengaturan" subtitle="Semua teks utama website diatur dari sini. Perubahan langsung tampil di website setelah disimpan." />
 
       <Group title="Identitas">
@@ -222,11 +222,13 @@ export default function SettingsForm({ initial, children }: { initial: SiteSetti
       {children}
 
       <div className="fixed inset-x-0 bottom-0 z-30 border-t border-[var(--ad-line)] bg-[rgba(245,245,247,0.86)] backdrop-blur-xl lg:left-[248px]">
-        <div className="mx-auto flex max-w-[1160px] items-center justify-end gap-4 px-4 py-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] sm:px-6 lg:px-10">
-          {error && <span role="alert" className="mr-auto truncate text-[14px] text-[var(--ad-red)]">{error}</span>}
-          <button disabled={saving} className="ad-btn ad-btn-primary min-w-[150px]">
-            {saving ? <Loader2 size={15} className="animate-spin" /> : <Save size={15} />} Simpan perubahan
-          </button>
+        <div className="px-4 py-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] sm:px-6 lg:px-10">
+          <div className="flex max-w-3xl items-center justify-end gap-4">
+            {error && <span role="alert" className="mr-auto truncate text-[14px] text-[var(--ad-red)]">{error}</span>}
+            <button disabled={saving} className="ad-btn ad-btn-primary min-w-[150px]">
+              {saving ? <Loader2 size={15} className="animate-spin" /> : <Save size={15} />} Simpan perubahan
+            </button>
+          </div>
         </div>
       </div>
     </form>

@@ -14,7 +14,7 @@ export default async function Page() {
       rows={data ?? []}
       headerExtra={
         <>
-          <Link href="/admin/pendaftar/laporan" className="ad-btn ad-btn-primary"><FileText size={16} /> Laporan PDF</Link>
+          <Link href="/admin/pendaftar/laporan" className="ad-btn"><FileText size={16} /> Laporan PDF</Link>
           <a href="/admin/pendaftar/export" className="ad-btn"><Download size={16} /> Unduh CSV</a>
         </>
       }

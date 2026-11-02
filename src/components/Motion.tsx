@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect } from "react";
 import { usePathname } from "next/navigation";
 
 /**
@@ -14,16 +14,12 @@ import { usePathname } from "next/navigation";
  *  data-scrub-words    kata-kata terisi warna mengikuti scroll
  *  data-tilt           kartu miring 3D mengikuti kursor
  *  data-magnetic       tombol tertarik ke kursor
- *  data-cursor="Teks"  cincin kursor membesar + label
  *  data-hero           variabel --hp (scroll) dan --mx/--my (kursor) untuk hero
  *  data-skew           miring tipis mengikuti kecepatan scroll (pita teks)
  * Aktif hanya bila <html class="m"> (diatur skrip di <head>; mati bila pengguna memilih "kurangi gerakan").
  */
 export default function Motion() {
   const path = usePathname();
-  const glow = useRef<HTMLDivElement>(null);
-  const ring = useRef<HTMLDivElement>(null);
-  const label = useRef<HTMLSpanElement>(null);
 
   useEffect(() => {
     const root = document.documentElement;
@@ -189,38 +185,14 @@ export default function Motion() {
 
     /* ---------- Interaksi kursor (hanya perangkat dengan mouse) ---------- */
     if (fine) {
-      const g = glow.current;
-      const rg = ring.current;
-      const lab = label.current;
-      let tx = -200, ty = -200, gx = tx, gy = ty, rx = tx, ry = ty;
-      let raf = 0;
-      const loop = () => {
-        gx += (tx - gx) * 0.08;
-        gy += (ty - gy) * 0.08;
-        rx += (tx - rx) * 0.22;
-        ry += (ty - ry) * 0.22;
-        if (g) g.style.transform = `translate3d(${gx - 260}px, ${gy - 260}px, 0)`;
-        if (rg) rg.style.transform = `translate3d(${rx}px, ${ry}px, 0)`;
-        raf = requestAnimationFrame(loop);
-      };
-      raf = requestAnimationFrame(loop);
-
       const heroMouse = (e: PointerEvent) => {
         if (!hero) return;
         hero.style.setProperty("--mx", (e.clientX / window.innerWidth - 0.5).toFixed(3));
         hero.style.setProperty("--my", (e.clientY / vh() - 0.5).toFixed(3));
       };
       const onMove = (e: PointerEvent) => {
-        tx = e.clientX;
-        ty = e.clientY;
-        root.classList.add("cur-on");
         heroMouse(e);
         const t = e.target as HTMLElement | null;
-        const hot = t?.closest<HTMLElement>("a, button, summary, label[for], [data-cursor]");
-        const text = hot?.closest<HTMLElement>("[data-cursor]")?.dataset.cursor ?? "";
-        rg?.classList.toggle("hot", !!hot);
-        rg?.classList.toggle("txt", !!text);
-        if (lab && lab.textContent !== text) lab.textContent = text;
 
         // kartu miring
         const card = t?.closest<HTMLElement>("[data-tilt]");
@@ -253,7 +225,6 @@ export default function Motion() {
       };
       const onOut = (e: MouseEvent) => {
         if (!e.relatedTarget) {
-          root.classList.remove("cur-on");
           if (hero) {
             hero.style.setProperty("--mx", "0");
             hero.style.setProperty("--my", "0");
@@ -264,7 +235,6 @@ export default function Motion() {
       document.addEventListener("pointerout", onLeaveCard as EventListener);
       document.addEventListener("mouseout", onOut);
       cleanups.push(() => {
-        cancelAnimationFrame(raf);
         window.removeEventListener("pointermove", onMove);
         document.removeEventListener("pointerout", onLeaveCard as EventListener);
         document.removeEventListener("mouseout", onOut);
@@ -277,12 +247,5 @@ export default function Motion() {
     };
   }, [path]);
 
-  return (
-    <>
-      <div ref={glow} className="m-glow" aria-hidden />
-      <div ref={ring} className="m-ring" aria-hidden>
-        <span ref={label} />
-      </div>
-    </>
-  );
+  return null;
 }

@@ -17,6 +17,8 @@ export const metadata: Metadata = {
   openGraph: { type: "website", locale: "id_ID", siteName: "KMKC", title, description },
   twitter: { card: "summary_large_image", title, description },
   alternates: { types: { "application/rss+xml": "/feed.xml" } },
+  // Kode verifikasi Google Search Console (isi lewat env NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION; kosong = tidak dipasang).
+  verification: { google: process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION || undefined },
 };
 
 export const viewport: Viewport = { themeColor: "#1e4fa3" };

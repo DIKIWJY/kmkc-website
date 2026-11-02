@@ -4,13 +4,14 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
-  LayoutDashboard, Users, Images, FileText, Briefcase, Inbox, Settings, LogOut, Menu, X, ArrowUpRight, History, CalendarDays, UserPlus, Archive,
+  LayoutDashboard, Users, Images, FileText, Briefcase, Inbox, Settings, LogOut, Menu, X, ArrowUpRight, History, CalendarDays, UserPlus, Archive, ChevronRight,
 } from "lucide-react";
 import { signOut } from "@/lib/admin/actions";
 import CommandPalette from "./CommandPalette";
 import Logo from "@/components/ui/Logo";
 
-const groups: { title?: string; items: { href: string; icon: React.ElementType; label: string }[] }[] = [
+type Item = { href: string; icon: React.ElementType; label: string };
+const groups: { title?: string; items: Item[] }[] = [
   { items: [{ href: "/admin", icon: LayoutDashboard, label: "Ringkasan" }] },
   {
     title: "Konten",
@@ -39,12 +40,23 @@ const groups: { title?: string; items: { href: string; icon: React.ElementType; 
   },
 ];
 
-export default function Sidebar({ email, unread, children }: { email: string; unread: number; children: React.ReactNode }) {
+const isActive = (path: string, href: string) => (href === "/admin" ? path === "/admin" : path === href || path.startsWith(href + "/"));
+
+/** Judul halaman untuk remah roti di bilah atas (kelompok › halaman). */
+function crumbOf(path: string): { group?: string; label: string } {
+  for (const g of groups) {
+    const it = g.items.find((i) => isActive(path, i.href));
+    if (it) return { group: g.title, label: it.label };
+  }
+  return { label: "Admin" };
+}
+
+export default function Sidebar({ email, unread, regOpen, children }: { email: string; unread: number; regOpen: boolean; children: React.ReactNode }) {
   const path = usePathname();
   // Laci seluler terikat ke halaman: pindah halaman otomatis menutupnya.
   const [openAt, setOpenAt] = useState<string | null>(null);
   const open = openAt === path;
-  const active = (href: string) => (href === "/admin" ? path === "/admin" : path === href || path.startsWith(href + "/"));
+  const crumb = crumbOf(path);
 
   useEffect(() => {
     if (!open) return;
@@ -59,18 +71,21 @@ export default function Sidebar({ email, unread, children }: { email: string; un
 
   return (
     <div className="lg:flex min-h-dvh">
-      {open && <div className="fixed inset-0 z-40 bg-black/30 backdrop-blur-[2px] lg:hidden" style={{ animation: "ad-fade .2s both" }} onClick={() => setOpenAt(null)} aria-hidden />}
+      {open && <div className="fixed inset-0 z-40 bg-[#050c20]/50 backdrop-blur-[3px] lg:hidden" style={{ animation: "ad-fade .2s both" }} onClick={() => setOpenAt(null)} aria-hidden />}
 
       <aside
-        className={`ad-sidebar fixed inset-y-0 left-0 z-50 w-[272px] lg:w-[248px] lg:sticky lg:top-0 lg:h-dvh shrink-0 flex flex-col transition-transform duration-300 [transition-timing-function:var(--ad-ease)] lg:translate-x-0 ${
+        className={`ad-sidebar fixed inset-y-0 left-0 z-50 w-[280px] lg:w-[256px] lg:sticky lg:top-0 lg:h-dvh shrink-0 flex flex-col transition-transform duration-300 [transition-timing-function:var(--ad-ease)] lg:translate-x-0 ${
           open ? "translate-x-0 shadow-2xl" : "-translate-x-full"
         }`}
         aria-label="Menu admin"
       >
-        <div className="h-[60px] shrink-0 flex items-center justify-between pl-5 pr-3">
-          <Link href="/admin" className="flex items-center gap-2.5">
-            <Logo size={28} alt="" />
-            <span className="text-[15px] font-semibold tracking-tight">KMKC<span className="ml-1.5 font-normal text-[var(--ad-faint)]">Admin</span></span>
+        <div className="h-[68px] shrink-0 flex items-center justify-between pl-5 pr-3">
+          <Link href="/admin" className="ad-brand" aria-label="KMKC Admin, ke Ringkasan">
+            <span className="ad-brand-mark"><Logo size={38} alt="" className="rounded-full" /></span>
+            <span className="min-w-0">
+              <b>KMKC</b>
+              <small>Panel Admin</small>
+            </span>
           </Link>
           <button onClick={() => setOpenAt(null)} className="ad-icon-btn lg:hidden" aria-label="Tutup menu"><X size={18} /></button>
         </div>
@@ -80,27 +95,31 @@ export default function Sidebar({ email, unread, children }: { email: string; un
             <div key={i}>
               {g.title && <p className="ad-nav-group">{g.title}</p>}
               {g.items.map(({ href, icon: Icon, label }) => (
-                <Link key={href} href={href} className="ad-nav" aria-current={active(href) ? "page" : undefined}>
-                  <Icon size={18} strokeWidth={1.9} />
+                <Link key={href} href={href} className="ad-nav" aria-current={isActive(path, href) ? "page" : undefined}>
+                  <Icon size={18} strokeWidth={1.75} />
                   <span className="truncate">{label}</span>
-                  {href === "/admin/pesan" && unread > 0 && (
-                    <span className="ml-auto min-w-[20px] h-5 px-1.5 rounded-full bg-[var(--ad-blue)] text-white text-[11px] font-semibold flex items-center justify-center tnum">{unread > 99 ? "99+" : unread}</span>
-                  )}
+                  {href === "/admin/pesan" && unread > 0 && <span className="ad-nav-count tnum">{unread > 99 ? "99+" : unread}</span>}
                 </Link>
               ))}
             </div>
           ))}
         </nav>
 
-        <div className="shrink-0 border-t border-[var(--ad-line)] p-2.5">
-          <Link href="/" target="_blank" className="ad-nav !mx-0 !text-[13.5px]">
-            <ArrowUpRight size={17} strokeWidth={1.9} /> Lihat website
-          </Link>
-          <div className="mt-1 flex items-center gap-2.5 rounded-xl px-2 py-1.5">
-            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[var(--ad-fill-hover)] text-[13px] font-semibold text-[var(--ad-ink-2)]" aria-hidden>
-              {(email[0] ?? "A").toUpperCase()}
+        <div className="ad-side-foot shrink-0">
+          <Link href="/admin/settings" className="ad-side-card" aria-label={`Pendaftaran anggota ${regOpen ? "dibuka" : "ditutup"}, buka pengaturan`}>
+            <span className={`ad-pulse ${regOpen ? "" : "off"}`} aria-hidden />
+            <span className="min-w-0 flex-1">
+              <small>Pendaftaran anggota</small>
+              <b>{regOpen ? "Sedang dibuka" : "Ditutup"}</b>
             </span>
-            <span className="min-w-0 flex-1 truncate text-[13px] text-[var(--ad-ink-2)]" title={email}>{email}</span>
+            <ChevronRight size={16} className="text-white/40" />
+          </Link>
+          <div className="mx-3 flex items-center gap-2.5 rounded-xl px-1.5 py-1">
+            <span className="ad-avatar" aria-hidden>{(email[0] ?? "A").toUpperCase()}</span>
+            <span className="min-w-0 flex-1 leading-tight">
+              <span className="block truncate text-[13px] font-medium text-white/90" title={email}>{email.split("@")[0]}</span>
+              <span className="block truncate text-[11.5px] text-white/45" title={email}>{email}</span>
+            </span>
             <form action={signOut}>
               <button className="ad-icon-btn" aria-label="Keluar" title="Keluar"><LogOut size={17} /></button>
             </form>
@@ -109,11 +128,18 @@ export default function Sidebar({ email, unread, children }: { email: string; un
       </aside>
 
       <div className="flex-1 min-w-0 flex flex-col">
-        <header className="ad-topbar sticky top-0 z-30 h-[52px] flex items-center gap-3 px-3 sm:px-6 lg:px-10">
+        <header className="ad-topbar sticky top-0 z-30 h-[56px] flex items-center gap-3 px-3 sm:px-6 lg:px-10">
           <button onClick={() => setOpenAt(path)} className="ad-icon-btn lg:hidden -ml-1" aria-label="Buka menu"><Menu size={20} /></button>
+          <div className="ad-crumb flex-1" aria-label="Lokasi">
+            {crumb.group && <><span className="hidden sm:inline">{crumb.group}</span><i className="hidden sm:inline">/</i></>}
+            <b className="truncate">{crumb.label}</b>
+          </div>
           <CommandPalette />
+          <Link href="/" target="_blank" className="ad-top-link hidden md:inline-flex">
+            Lihat website <ArrowUpRight size={15} />
+          </Link>
         </header>
-        <main id="konten" className="flex-1 w-full max-w-[1160px] mx-auto px-4 sm:px-6 lg:px-10 pt-6 pb-24 lg:pt-9 lg:pb-16">{children}</main>
+        <main id="konten" className="flex-1 w-full min-w-0 max-w-[1240px] px-4 sm:px-6 lg:px-10 pt-6 pb-24 lg:pt-9 lg:pb-16">{children}</main>
       </div>
     </div>
   );

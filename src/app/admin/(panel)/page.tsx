@@ -1,13 +1,13 @@
 import Link from "next/link";
-import { ChevronRight, Info, Check } from "lucide-react";
+import { ChevronRight, Info, Check, ArrowUpRight, TrendingUp, TrendingDown } from "lucide-react";
 import { getAdmin } from "@/lib/admin/guard";
 import { todayWIB } from "@/lib/date";
 import { getStats } from "@/lib/admin/stats";
-import { PageHeader, Section, Card } from "@/components/admin/ui";
+import { Section, Card } from "@/components/admin/ui";
 import TrafficPanel from "@/components/admin/charts/TrafficPanel";
 import Donut from "@/components/admin/charts/Donut";
 import HBars from "@/components/admin/charts/HBars";
-import Sparkline from "@/components/admin/charts/Sparkline";
+import AreaSpark from "@/components/admin/charts/AreaSpark";
 import type { ContactMessage, AuditEntry, SiteSettings } from "@/lib/types";
 
 const nf = new Intl.NumberFormat("id-ID");
@@ -79,11 +79,25 @@ export default async function Dashboard() {
   const msgList = (recent.data ?? []) as ContactMessage[];
   const logs = (audit.data ?? []) as AuditEntry[];
 
-  const kpis = [
-    { label: "Tampilan halaman", sub: "30 hari terakhir", v: sum30("views"), hint: today ? `${nf.format(today.views)} hari ini` : "", spark: last30.map((d) => d.views), href: undefined as string | undefined },
-    { label: "Pengunjung", sub: "30 hari terakhir", v: sum30("visitors"), hint: today ? `${nf.format(today.visitors)} hari ini` : "", spark: last30.map((d) => d.visitors), href: undefined },
-    { label: "Pesan belum dibaca", sub: `${nf.format(msgs.count ?? 0)} pesan total`, v: unread.count ?? 0, hint: "", spark: null, href: "/admin/pesan" },
-    { label: "Pendaftar baru", sub: "menunggu tindak lanjut", v: regsNew.count ?? 0, spark: null, href: "/admin/pendaftar" },
+  // Salam sesuai jam WIB + tanggal lengkap
+  // eslint-disable-next-line react-hooks/purity
+  const wib = new Date(Date.now() + 7 * 3600e3);
+  const h = wib.getUTCHours();
+  const salam = h < 11 ? "Selamat pagi" : h < 15 ? "Selamat siang" : h < 18 ? "Selamat sore" : "Selamat malam";
+  const tanggal = wib.toLocaleDateString("id-ID", { weekday: "long", day: "numeric", month: "long", year: "numeric", timeZone: "UTC" });
+  const prev30 = stats.daily.slice(-60, -30).reduce((a, d) => a + d.visitors, 0);
+  const delta = stats.daily.length >= 60 && prev30 > 0 ? Math.round(((sum30("visitors") - prev30) / prev30) * 100) : null;
+  const pending = [
+    { n: regsNew.count ?? 0, label: "pendaftar baru", href: "/admin/pendaftar" },
+    { n: unread.count ?? 0, label: "pesan belum dibaca", href: "/admin/pesan" },
+    { n: drafts.count ?? 0, label: "draf berita", href: "/admin/berita" },
+  ].filter((x) => x.n > 0);
+
+  const strip = [
+    { label: "Tampilan halaman", v: sum30("views"), sub: today ? `${nf.format(today.views)} hari ini` : "30 hari terakhir", href: undefined as string | undefined },
+    { label: "Pengunjung", v: sum30("visitors"), sub: today ? `${nf.format(today.visitors)} hari ini` : "30 hari terakhir", href: undefined },
+    { label: "Pendaftar baru", v: regsNew.count ?? 0, sub: "menunggu tindak lanjut", href: "/admin/pendaftar" },
+    { label: "Pesan belum dibaca", v: unread.count ?? 0, sub: `${nf.format(msgs.count ?? 0)} pesan total`, href: "/admin/pesan" },
   ];
 
   const content = [
@@ -96,7 +110,55 @@ export default async function Dashboard() {
 
   return (
     <div className="space-y-8 lg:space-y-10">
-      <PageHeader title="Ringkasan" subtitle={`Halo, ${email.split("@")[0]}. Berikut kondisi website KMKC hari ini.`} />
+      <section className="ad-hero ad-rise" aria-label="Ringkasan utama">
+        <div className="relative grid gap-8 p-6 sm:p-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.05fr)] lg:gap-10 lg:p-10">
+          <div className="flex min-w-0 flex-col justify-between gap-8">
+            <div>
+              <p className="ad-hero-eyebrow"><span className="ad-pulse" aria-hidden /> {tanggal}</p>
+              <h1 className="mt-4 text-[32px] font-bold leading-[1.08] tracking-[-0.035em] sm:text-[40px]">
+                {salam}, <span className="capitalize">{email.split("@")[0]}</span>
+              </h1>
+              <p className="mt-3 max-w-md text-[15px] leading-relaxed text-white/60">
+                {pending.length ? "Ada yang menunggu tindak lanjut dari kamu hari ini." : "Semua beres. Tidak ada yang menunggu tindak lanjut saat ini."}
+              </p>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {pending.map((x) => (
+                <Link key={x.label} href={x.href} className="ad-chip"><b className="tnum">{nf.format(x.n)}</b> {x.label} <ArrowUpRight size={14} className="opacity-60" /></Link>
+              ))}
+              {!pending.length && <Link href="/admin/berita" className="ad-chip">Tulis berita baru <ArrowUpRight size={14} className="opacity-60" /></Link>}
+            </div>
+          </div>
+
+          <div className="min-w-0">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <p className="text-[13px] text-white/55">Pengunjung · 30 hari terakhir</p>
+                <p className="mt-2 text-[48px] font-bold leading-none tracking-[-0.045em] tnum sm:text-[56px]">{nf.format(sum30("visitors"))}</p>
+              </div>
+              {delta !== null && (
+                <span className={`ad-delta mt-1 ${delta < 0 ? "down" : ""}`} title="Dibanding 30 hari sebelumnya">
+                  {delta < 0 ? <TrendingDown size={13} /> : <TrendingUp size={13} />} {delta > 0 ? "+" : ""}{delta}%
+                </span>
+              )}
+            </div>
+            <AreaSpark values={last30.map((d) => d.visitors)} className="mt-4 h-[104px] w-full sm:h-[120px]" />
+          </div>
+        </div>
+
+        <div className="ad-hero-strip">
+          {strip.map((k) => {
+            const body = (
+              <>
+                <small>{k.label}</small>
+                <strong>{nf.format(k.v)}</strong>
+                <span>{k.sub}</span>
+              </>
+            );
+            return k.href ? <Link key={k.label} href={k.href} className="ad-hero-cell">{body}</Link> : <div key={k.label} className="ad-hero-cell">{body}</div>;
+          })}
+        </div>
+      </section>
 
       {!stats.ok && (
         <div className="flex gap-3 rounded-[14px] bg-[var(--ad-blue-soft)] px-4 py-3 text-[14px] text-[#0b4a8f]">
@@ -106,28 +168,6 @@ export default async function Dashboard() {
           </p>
         </div>
       )}
-
-      {/* KPI */}
-      <Card>
-        <div className="grid grid-cols-2 xl:grid-cols-4">
-          {kpis.map((k, i) => {
-            const body = (
-              <>
-                <p className="text-[13px] font-medium text-[var(--ad-mute)]">{k.label}</p>
-                <p className="mt-2 text-[30px] font-semibold leading-none tracking-[-0.03em] tnum sm:text-[34px]">{nf.format(k.v)}</p>
-                <p className="mt-2 text-[12.5px] text-[var(--ad-faint)]">{k.hint || k.sub}</p>
-                {k.spark && <Sparkline values={k.spark} className="mt-3 text-[var(--ad-blue)]" />}
-              </>
-            );
-            const pos = `p-5 sm:p-6 ${i % 2 === 1 ? "border-l border-[var(--ad-line)]" : ""} ${i >= 2 ? "border-t border-[var(--ad-line)]" : ""} ${i >= 1 ? "xl:border-l xl:border-[var(--ad-line)]" : ""} ${i >= 2 ? "xl:border-t-0" : ""} ${i === 2 ? "xl:border-l" : ""}`;
-            return k.href ? (
-              <Link key={k.label} href={k.href} className={`block transition-colors hover:bg-black/[0.025] ${pos}`}>{body}</Link>
-            ) : (
-              <div key={k.label} className={pos}>{body}</div>
-            );
-          })}
-        </div>
-      </Card>
 
       {/* Lalu lintas */}
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
@@ -233,7 +273,7 @@ export default async function Dashboard() {
         </Section>
 
         <div className="space-y-6">
-          <Section title="Pendaftar terbaru" action={<Link href="/admin/pendaftar" className="ad-btn ad-btn-plain ad-btn-sm">Lihat semua</Link>}>
+          <Section title="Pendaftar terbaru" hint="Masuk lewat /daftar" action={<Link href="/admin/pendaftar" className="ad-btn ad-btn-plain ad-btn-sm">Lihat semua</Link>}>
             <Card>
               {regs.length === 0 ? (
                 <p className="py-8 text-center text-[var(--ad-faint)]">Belum ada pendaftar. Bagikan tautan <b className="font-semibold">/daftar</b> ke calon anggota.</p>
@@ -253,7 +293,7 @@ export default async function Dashboard() {
             </Card>
           </Section>
 
-          <Section title="Aktivitas terakhir" action={<Link href="/admin/aktivitas" className="ad-btn ad-btn-plain ad-btn-sm">Semua log</Link>}>
+          <Section title="Aktivitas terakhir" hint="Perubahan oleh admin" action={<Link href="/admin/aktivitas" className="ad-btn ad-btn-plain ad-btn-sm">Semua log</Link>}>
             <Card>
               {logs.length === 0 ? (
                 <p className="py-8 text-center text-[var(--ad-faint)]">Belum ada aktivitas.</p>

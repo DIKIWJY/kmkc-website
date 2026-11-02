@@ -44,7 +44,7 @@ export default async function ArsipPage() {
   const storageUsed = (usage?.buckets ?? []).reduce((a, b) => a + b.bytes, 0);
 
   return (
-    <div className="mx-auto max-w-3xl space-y-9 pb-16">
+    <div className="max-w-3xl space-y-9 pb-16">
       <PageHeader title="Arsip & cadangan" subtitle="Simpan data ke PDF sebelum penyimpanan penuh, dan pantau pemakaian paket gratis Supabase." />
 
       <Section title="Pemakaian penyimpanan" hint="Angka dibaca langsung dari database.">

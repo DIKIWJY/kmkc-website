@@ -23,7 +23,7 @@ export default function Marquee({ fullName }: { fullName: string }) {
     </div>
   );
   return (
-    <div className="relative overflow-hidden bg-[#050f26] pb-20 pt-6 sm:pb-28" data-cursor="">
+    <div className="relative overflow-hidden bg-[#050f26] pb-20 pt-6 sm:pb-28">
       <div aria-hidden className="pointer-events-none absolute inset-x-0 top-0 h-24 bg-gradient-to-b from-[#050f26] to-transparent" />
       <p className="sr-only">{words.join(", ")}</p>
       <div aria-hidden className="select-none">

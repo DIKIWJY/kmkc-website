@@ -236,7 +236,7 @@ export default function Gallery({ items, page }: GalleryProps) {
             <button
               key={item.id}
               onClick={() => setSelected(i)}
-              data-a="zoom" data-cursor="Lihat" className="gallery-item relative block w-full break-inside-avoid cursor-zoom-in"
+              data-a="zoom" className="gallery-item relative block w-full break-inside-avoid cursor-zoom-in"
               aria-label={`Buka foto: ${item.title}`}
             >
               {item.image_url ? (

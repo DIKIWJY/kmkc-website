@@ -10,12 +10,12 @@ export const dynamic = "force-dynamic";
 export default async function LoginPage({ searchParams }: { searchParams: Promise<{ e?: string }> }) {
   const { e } = await searchParams;
   return (
-    <main className="flex min-h-dvh flex-col items-center px-5 py-8">
-      <div className="flex w-full max-w-[420px] flex-1 flex-col justify-center py-8">
+    <main className="ad-login flex min-h-dvh flex-col items-center px-5 py-8">
+      <div className="relative flex w-full max-w-[420px] flex-1 flex-col justify-center py-8">
         <div className="mb-8 flex flex-col items-center text-center">
-          <Logo size={64} priority alt="" className="h-16 w-16" />
+          <span className="rounded-full shadow-[0_0_0_3px_rgba(255,255,255,0.14),0_16px_44px_-8px_rgba(56,189,248,0.65)]"><Logo size={68} priority alt="" className="h-[68px] w-[68px] rounded-full" /></span>
           <h1 className="mt-6 text-[28px] font-semibold leading-tight tracking-[-0.03em] sm:text-[32px]">Masuk ke Admin KMKC</h1>
-          <p className="mt-2 text-[15px] text-[var(--ad-mute)]">Gunakan akun admin yang terdaftar.</p>
+          <p className="mt-2 text-[15px] text-white/60">Gunakan akun admin yang terdaftar.</p>
         </div>
 
         {isSupabaseConfigured ? (
@@ -34,11 +34,11 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
           </div>
         )}
 
-        <p className="mt-8 text-center text-[13px] leading-relaxed text-[var(--ad-faint)]">
+        <p className="mt-8 text-center text-[13px] leading-relaxed text-white/45">
           Lupa kata sandi? Minta presidium mengatur ulang lewat Supabase → Authentication → Users.
         </p>
       </div>
-      <Link href="/" className="text-[13px] text-[var(--ad-blue)] hover:underline">← Kembali ke website</Link>
+      <Link href="/" className="relative text-[13px] text-sky-300 hover:text-white hover:underline">← Kembali ke website</Link>
     </main>
   );
 }
