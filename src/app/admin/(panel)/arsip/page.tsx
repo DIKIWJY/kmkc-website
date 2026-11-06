@@ -1,9 +1,12 @@
 import Link from "next/link";
 import { Download, Users } from "lucide-react";
 import { getAdmin } from "@/lib/admin/guard";
-import { PageHeader, Section, Card, Badge } from "@/components/admin/ui";
+import { PageHeader, Section, Card } from "@/components/admin/ui";
 import ArchiveBuilder from "@/components/admin/ArchiveBuilder";
 import PurgeProofs from "@/components/admin/PurgeProofs";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 import { fmtBytes } from "@/lib/admin/archive-shared";
 
 export const metadata = { title: "Arsip & Cadangan" };
@@ -20,15 +23,15 @@ function Meter({ label, used, limit, note }: { label: string; used: number; limi
   return (
     <div className="p-5">
       <div className="flex items-baseline justify-between gap-3">
-        <p className="text-[15px] font-medium">{label}</p>
-        <p className="text-[14px] text-[var(--ad-mute)] tnum"><b className="font-semibold text-[var(--ad-ink)]">{fmtBytes(used)}</b> dari {fmtBytes(limit)}</p>
+        <p className="text-sm font-medium">{label}</p>
+        <p className="text-sm tabular-nums text-muted-foreground"><b className="font-semibold text-foreground">{fmtBytes(used)}</b> dari {fmtBytes(limit)}</p>
       </div>
-      <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-[rgba(0,0,0,0.07)]" role="img" aria-label={`${label}: ${pct.toFixed(0)}% terpakai`}>
-        <div className={`h-full rounded-full ${warn ? "bg-[var(--ad-red)]" : "bg-[var(--ad-blue)]"}`} style={{ width: `${Math.max(1.5, pct)}%` }} />
+      <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-muted" role="img" aria-label={`${label}: ${pct.toFixed(0)}% terpakai`}>
+        <div className={cn("h-full rounded-full", warn ? "bg-destructive" : "bg-primary")} style={{ width: `${Math.max(1.5, pct)}%` }} />
       </div>
-      <div className="mt-2 flex items-center justify-between gap-3 text-[12.5px] text-[var(--ad-faint)]">
+      <div className="mt-2 flex items-center justify-between gap-3 text-xs text-muted-foreground">
         <span>{note}</span>
-        {warn && <Badge tone="red">Hampir penuh</Badge>}
+        {warn && <Badge variant="danger">Hampir penuh</Badge>}
       </div>
     </div>
   );
@@ -44,18 +47,18 @@ export default async function ArsipPage() {
   const storageUsed = (usage?.buckets ?? []).reduce((a, b) => a + b.bytes, 0);
 
   return (
-    <div className="max-w-3xl space-y-9 pb-16">
+    <div className="max-w-3xl space-y-9 pb-8">
       <PageHeader title="Arsip & cadangan" subtitle="Simpan data ke PDF sebelum penyimpanan penuh, dan pantau pemakaian paket gratis Supabase." />
 
       <Section title="Pemakaian penyimpanan" hint="Angka dibaca langsung dari database.">
         {usage ? (
-          <Card className="ad-divide">
+          <Card className="divide-y">
             <Meter label="Database" used={usage.db_bytes} limit={DB_LIMIT} note="Teks: berita, pendaftar, pesan, statistik" />
             <Meter label="Storage (foto & bukti)" used={storageUsed} limit={STORAGE_LIMIT} note={`Foto website ${fmtBytes(media.bytes)} · ${media.files} berkas  |  Bukti follow ${fmtBytes(bukti.bytes)} · ${bukti.files} berkas`} />
           </Card>
         ) : (
-          <Card className="p-5 text-[14px] text-[var(--ad-mute)]">
-            Pemakaian belum bisa dibaca. Jalankan ulang <code className="rounded bg-[var(--ad-fill)] px-1">supabase/schema.sql</code> di SQL Editor (aman diulang) untuk mengaktifkan bagian ini.
+          <Card className="p-5 text-sm text-muted-foreground">
+            Pemakaian belum bisa dibaca. Jalankan ulang <code className="rounded bg-muted px-1 text-foreground">supabase/schema.sql</code> di SQL Editor (aman diulang) untuk mengaktifkan bagian ini.
           </Card>
         )}
       </Section>
@@ -64,10 +67,10 @@ export default async function ArsipPage() {
         <ArchiveBuilder />
       </Section>
 
-      <Section title="Laporan khusus pendaftar" hint="Dengan penyaringan status, desa, kampus, angkatan, dan periode.">
+      <Section title="Laporan khusus pendaftar" hint="Dengan penyaringan desa, kampus, angkatan, dan periode.">
         <Card className="flex flex-col gap-4 p-5 sm:flex-row sm:items-center">
-          <p className="flex-1 text-[14px] text-[var(--ad-mute)]">Rekap atau rinci per orang, dikelompokkan, dengan statistik, alasan bergabung, bukti follow, dan kolom pengesahan.</p>
-          <Link href="/admin/pendaftar/laporan" className="ad-btn ad-btn-primary"><Users size={16} /> Buat laporan pendaftar</Link>
+          <p className="flex-1 text-sm text-muted-foreground">Rekap atau rinci per orang, dikelompokkan, dengan statistik, alasan bergabung, bukti follow, dan kolom pengesahan.</p>
+          <Button asChild className="self-start sm:self-auto"><Link href="/admin/pendaftar/laporan"><Users /> Buat laporan pendaftar</Link></Button>
         </Card>
       </Section>
 
@@ -79,8 +82,8 @@ export default async function ArsipPage() {
 
       <Section title="Cadangan data mentah" hint="Berkas JSON seluruh tabel. Untuk dipulihkan oleh teknisi, bukan untuk dibaca.">
         <Card className="flex flex-col gap-4 p-5 sm:flex-row sm:items-center">
-          <p className="flex-1 text-[14px] text-[var(--ad-mute)]">Foto tidak ikut diunduh, hanya tautannya. Gunakan laporan PDF bila ingin arsip yang terbaca manusia.</p>
-          <a href="/admin/backup" download className="ad-btn"><Download size={16} /> Unduh JSON</a>
+          <p className="flex-1 text-sm text-muted-foreground">Foto tidak ikut diunduh, hanya tautannya. Gunakan laporan PDF bila ingin arsip yang terbaca manusia.</p>
+          <Button asChild variant="outline" className="self-start sm:self-auto"><a href="/api/admin/backup" download><Download /> Unduh JSON</a></Button>
         </Card>
       </Section>
     </div>

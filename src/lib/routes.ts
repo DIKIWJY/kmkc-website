@@ -16,6 +16,12 @@ export const MAIN_NAV: NavItem[] = [
   { href: "/kontak", label: "Kontak", desc: "Hubungi pengurus KMKC." },
 ];
 
+/** Beranda tampil paling kiri di bilah navbar. Tidak dimasukkan ke MAIN_NAV karena sitemap sudah punya entri "/" sendiri. */
+export const HOME_NAV: NavItem = { href: "/", label: "Beranda", desc: "Halaman utama KMKC." };
+
+/** Isi bilah navbar: Beranda lalu menu utama. */
+export const BAR_NAV: NavItem[] = [HOME_NAV, ...MAIN_NAV];
+
 /** Tampil di menu seluler dan footer, tetapi tidak di bilah utama. */
 export const MORE_NAV: NavItem[] = [
   { href: "/", label: "Beranda" },

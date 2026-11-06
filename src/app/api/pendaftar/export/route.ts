@@ -4,7 +4,7 @@ export const dynamic = "force-dynamic";
 
 const COLS: [string, string][] = [
   ["created_at", "Waktu daftar"], ["full_name", "Nama lengkap"], ["phone", "WhatsApp"], ["email", "Email"], ["village", "Desa asal"],
-  ["batch", "Angkatan"], ["campus", "Perguruan tinggi"], ["major", "Program studi"], ["message", "Alasan bergabung"], ["follow_proof", "Bukti follow IG"], ["fee_amount", "Nominal HTM (Rp)"], ["payment_proof", "Bukti bayar HTM"], ["status", "Status"], ["note", "Catatan"],
+  ["batch", "Angkatan"], ["campus", "Perguruan tinggi"], ["major", "Program studi"], ["message", "Alasan bergabung"], ["follow_proof", "Bukti follow IG"], ["fee_amount", "Nominal HTM (Rp)"], ["payment_proof", "Bukti bayar HTM"], ["note", "Catatan"],
 ];
 
 

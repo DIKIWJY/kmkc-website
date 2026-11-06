@@ -24,6 +24,10 @@ const nextConfig: NextConfig = {
       ...to("/galeri", "/gallery"),
       ...to("/kontak", "/contact", "/hubungi-kami"),
       ...to("/daftar", "/gabung", "/register"),
+      // Alamat admin lama (campur Inggris/Indonesia) → alamat baru yang seragam berbahasa Indonesia.
+      ...to("/admin/galeri", "/admin/gallery"),
+      ...to("/admin/pengaturan", "/admin/settings"),
+      ...to("/admin/program-kerja", "/admin/program"),
     ];
   },
   async headers() {
@@ -39,6 +43,14 @@ const nextConfig: NextConfig = {
       {
         // Admin tidak boleh di-embed (anti-clickjacking) dan tidak boleh di-cache
         source: "/admin/:path*",
+        headers: [
+          { key: "X-Frame-Options", value: "DENY" },
+          { key: "Cache-Control", value: "no-store" },
+        ],
+      },
+      {
+        // Endpoint admin (unduhan cadangan/CSV, bukti pendaftar) juga tidak boleh di-cache
+        source: "/api/admin/:path*",
         headers: [
           { key: "X-Frame-Options", value: "DENY" },
           { key: "Cache-Control", value: "no-store" },

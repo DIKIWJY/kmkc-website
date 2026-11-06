@@ -9,7 +9,7 @@ export default async function Page() {
   const { supabase } = await getAdmin();
   const { data } = await supabase
     .from("registrations")
-    .select("id,status,village,campus,batch,created_at")
+    .select("id,village,campus,batch,created_at")
     .order("created_at", { ascending: false })
     .limit(3000);
   const rows = (data ?? []) as RegLite[];

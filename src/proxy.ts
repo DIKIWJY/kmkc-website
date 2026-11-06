@@ -5,7 +5,7 @@ export async function proxy(request: NextRequest) {
   return updateSession(request);
 }
 
-// Hanya jalan di area admin — halaman publik tetap statis & cepat.
+// Hanya jalan di area admin dan endpoint admin — halaman publik tetap statis & cepat.
 export const config = {
-  matcher: ["/admin/:path*"],
+  matcher: ["/admin/:path*", "/api/admin/:path*"],
 };

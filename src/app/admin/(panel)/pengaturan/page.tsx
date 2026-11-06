@@ -1,6 +1,7 @@
 import { getAdmin } from "@/lib/admin/guard";
 import SettingsForm from "@/components/admin/SettingsForm";
-import { Section, Card } from "@/components/admin/ui";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { sampleSettings } from "@/lib/sample-data";
 import { Download } from "lucide-react";
 import type { SiteSettings } from "@/lib/types";
@@ -12,16 +13,19 @@ export default async function SettingsPage() {
   const { data } = await supabase.from("site_settings").select("*").eq("id", 1).maybeSingle();
   return (
     <SettingsForm initial={{ ...sampleSettings, ...(data ?? {}) } as SiteSettings}>
-      <Section title="Cadangan data">
-        <Card className="flex flex-col gap-4 p-5 sm:flex-row sm:items-center">
-          <p className="flex-1 text-[14px] text-[var(--ad-mute)]">
+      <Card>
+        <CardHeader>
+          <CardTitle>Cadangan data</CardTitle>
+          <CardDescription>
             Unduh seluruh konten (pengaturan, pengurus, program, agenda, galeri, berita, pesan) sebagai satu berkas JSON. Simpan sebelum melakukan perubahan besar.
-          </p>
-          <a href="/admin/backup" download className="ad-btn ad-btn-primary self-start sm:self-auto">
-            <Download size={16} /> Unduh cadangan
-          </a>
-        </Card>
-      </Section>
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Button asChild variant="outline">
+            <a href="/api/admin/backup" download><Download /> Unduh cadangan</a>
+          </Button>
+        </CardContent>
+      </Card>
     </SettingsForm>
   );
 }

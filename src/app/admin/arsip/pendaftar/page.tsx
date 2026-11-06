@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { getAdmin } from "@/lib/admin/guard";
 import { sampleSettings } from "@/lib/sample-data";
-import { REG_STATUSES, distinct, matchReg, norm, parseRegOptions, wibDay, type RegGroup } from "@/lib/admin/registrant-report";
+import { distinct, matchReg, norm, parseRegOptions, wibDay, type RegGroup } from "@/lib/admin/registrant-report";
 import PrintBar from "@/components/admin/PrintBar";
 import Logo from "@/components/ui/Logo";
 import type { SiteSettings } from "@/lib/types";
@@ -11,14 +11,13 @@ import "../laporan/report.css";
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: "Laporan pendaftar", robots: { index: false, follow: false } };
 
-type Reg = { id: string; full_name: string; phone: string; email: string; village: string; campus: string; major: string; batch: string; message: string; follow_proof: string; status: string; note: string; created_at: string; fee_amount?: number; payment_proof?: string };
+type Reg = { id: string; full_name: string; phone: string; email: string; village: string; campus: string; major: string; batch: string; message: string; follow_proof: string; note: string; created_at: string; fee_amount?: number; payment_proof?: string };
 
 const TZ = "Asia/Jakarta";
 const fmtD = (v: string) => new Date(/^\d{4}-\d{2}-\d{2}$/.test(v) ? `${v}T12:00:00Z` : v).toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric", timeZone: TZ });
 const fmtDT = (v: string) => new Date(v).toLocaleString("id-ID", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit", timeZone: TZ }).replace(".", ":");
 const nf = new Intl.NumberFormat("id-ID");
-const STATUS: Record<string, string> = Object.fromEntries(REG_STATUSES.map((s) => [s.key, s.label]));
-const GROUP_LABEL: Record<RegGroup, string> = { none: "", village: "desa asal", campus: "kampus", batch: "angkatan", status: "status" };
+const GROUP_LABEL: Record<RegGroup, string> = { none: "", village: "desa asal", campus: "kampus", batch: "angkatan" };
 const EMPTY = "Tidak diisi";
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agu", "Sep", "Okt", "Nov", "Des"];
 
@@ -66,10 +65,10 @@ export default async function LaporanPendaftar({ searchParams }: { searchParams:
   const tally = (f: (r: Reg) => string) => { const m = new Map<string, number>(); for (const r of rows) m.set(f(r), (m.get(f(r)) ?? 0) + 1); return [...m.entries()]; };
   const byCount = (e: [string, number][]) => e.sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0], "id"));
   const topN = (e: [string, number][], n = 15): [string, number][] => { const s2 = byCount(e); if (s2.length <= n) return s2; const rest = s2.slice(n).reduce((a, x) => a + x[1], 0); return [...s2.slice(0, n), [`Lainnya (${s2.length - n})`, rest]]; };
-  const statusRows: [string, number][] = REG_STATUSES.map((st) => [st.label, rows.filter((r) => r.status === st.key).length] as [string, number]).filter((x) => x[1] > 0);
   const monthRows = tally((r) => wibDay(r.created_at).slice(0, 7)).sort((a, b) => a[0].localeCompare(b[0])).map(([k, n]): [string, number] => [`${MONTHS[Number(k.slice(5)) - 1]} ${k.slice(0, 4)}`, n]);
   const withProof = rows.filter((r) => r.follow_proof).length;
-  const count = (st: string) => rows.filter((r) => r.status === st).length;
+  const villageCount = new Set(rows.map((r) => cVillage(r.village)).filter((v) => v !== EMPTY)).size;
+  const campusCount = new Set(rows.map((r) => cCampus(r.campus)).filter((v) => v !== EMPTY)).size;
   // HTM: hanya tampil bila ada pendaftar yang berkewajiban membayar
   const payers = rows.filter((r) => (r.fee_amount ?? 0) > 0);
   const hasFee = payers.length > 0;
@@ -77,21 +76,18 @@ export default async function LaporanPendaftar({ searchParams }: { searchParams:
 
   // Pengelompokan daftar
   const keyOf: Record<RegGroup, (r: Reg) => string> = {
-    none: () => "", village: (r) => cVillage(r.village), campus: (r) => cCampus(r.campus), batch: (r) => cBatch(r.batch), status: (r) => STATUS[r.status] ?? r.status,
+    none: () => "", village: (r) => cVillage(r.village), campus: (r) => cCampus(r.campus), batch: (r) => cBatch(r.batch),
   };
   const groups: { name: string; items: Reg[] }[] = [];
   if (o.group === "none") groups.push({ name: "", items: rows });
   else {
     const m = new Map<string, Reg[]>();
     for (const r of rows) { const k = keyOf[o.group](r); m.set(k, [...(m.get(k) ?? []), r]); }
-    const order: string[] | null = o.group === "status" ? REG_STATUSES.map((x) => x.label) : null;
-    groups.push(...[...m.entries()].sort((a, b) => order ? order.indexOf(a[0]) - order.indexOf(b[0]) : a[0] === EMPTY ? 1 : b[0] === EMPTY ? -1 : a[0].localeCompare(b[0], "id", { numeric: true })).map(([name, items]) => ({ name, items })));
+    groups.push(...[...m.entries()].sort((a, b) => a[0] === EMPTY ? 1 : b[0] === EMPTY ? -1 : a[0].localeCompare(b[0], "id", { numeric: true })).map(([name, items]) => ({ name, items })));
   }
 
   // Deskripsi filter
-  const statusAll = o.statuses.length === REG_STATUSES.length;
   const filters = [
-    statusAll ? null : `Status: ${REG_STATUSES.filter((x) => o.statuses.includes(x.key)).map((x) => x.label).join(", ")}`,
     o.from || o.to ? `Terdaftar ${o.from ? fmtD(o.from) : "awal"} – ${o.to ? fmtD(o.to) : "sekarang"}` : null,
     o.village ? `Desa: ${o.village}` : null,
     o.campus ? `Kampus: ${o.campus}` : null,
@@ -127,7 +123,7 @@ export default async function LaporanPendaftar({ searchParams }: { searchParams:
           </div>
           <div className="toc">
             <h2>Cakupan data</h2>
-            <p className="prose" style={{ fontSize: "10pt", color: "#424245" }}>{filters.length ? filters.join(" · ") : "Seluruh pendaftar, semua status, semua periode."}{o.group !== "none" ? ` Dikelompokkan menurut ${GROUP_LABEL[o.group]}.` : ""}</p>
+            <p className="prose" style={{ fontSize: "10pt", color: "#424245" }}>{filters.length ? filters.join(" · ") : "Seluruh pendaftar, semua periode."}{o.group !== "none" ? ` Dikelompokkan menurut ${GROUP_LABEL[o.group]}.` : ""}</p>
           </div>
 
           <dl className="cover-meta">
@@ -145,8 +141,8 @@ export default async function LaporanPendaftar({ searchParams }: { searchParams:
             <div className="sec-head"><span className="n">01</span><h2>Ringkasan statistik</h2><span className="c">{nf.format(total)} pendaftar</span></div>
             <div className="kpis k4">
               <div><b>{nf.format(total)}</b><span>Total pendaftar</span></div>
-              <div><b>{nf.format(count("baru"))}</b><span>Baru</span></div>
-              <div><b>{nf.format(count("diterima"))}</b><span>Diterima</span></div>
+              <div><b>{nf.format(villageCount)}</b><span>Desa terwakili</span></div>
+              <div><b>{nf.format(campusCount)}</b><span>Perguruan tinggi</span></div>
               <div><b>{Math.round((withProof / total) * 100)}%</b><span>Melampirkan bukti follow</span></div>
             </div>
             {hasFee && (
@@ -157,7 +153,6 @@ export default async function LaporanPendaftar({ searchParams }: { searchParams:
                 <div><b>{Math.round((payers.length / total) * 100)}%</b><span>Dari seluruh pendaftar</span></div>
               </div>
             )}
-            <Bars title="Menurut status" first="Status" rows={statusRows} total={total} />
             <Bars title="Menurut desa asal" first="Desa" rows={topN(tally((r) => cVillage(r.village)))} total={total} />
             <Bars title="Menurut kampus" first="Kampus" rows={topN(tally((r) => cCampus(r.campus)))} total={total} />
             <Bars title="Menurut angkatan" first="Angkatan" rows={tally((r) => cBatch(r.batch)).sort((a, b) => a[0] === EMPTY ? 1 : b[0] === EMPTY ? -1 : a[0].localeCompare(b[0], "id", { numeric: true }))} total={total} />
@@ -187,7 +182,7 @@ export default async function LaporanPendaftar({ searchParams }: { searchParams:
                         <tbody key={r.id} className="one">
                           <tr>
                             <td className="num">{n}</td>
-                            <td><b>{r.full_name}</b> <span className={`tag ${r.status === "baru" || r.status === "diterima" ? "" : "gray"}`}>{STATUS[r.status] ?? r.status}</span>{(r.fee_amount ?? 0) > 0 && <div className="muted">HTM {rupiah(r.fee_amount ?? 0)}{r.payment_proof ? " · bukti terlampir" : ""}</div>}</td>
+                            <td><b>{r.full_name}</b>{(r.fee_amount ?? 0) > 0 && <div className="muted">HTM {rupiah(r.fee_amount ?? 0)}{r.payment_proof ? " · bukti terlampir" : ""}</div>}</td>
                             <td>{[cCampus(r.campus), r.major].filter((x) => x && x !== EMPTY).join(" · ") || "—"}{r.batch ? <div className="muted">Angkatan {cBatch(r.batch)}</div> : null}</td>
                             <td>{r.village ? cVillage(r.village) : "—"}</td>
                             {o.contact && <td>{r.phone}{r.email ? <div className="muted">{r.email}</div> : null}</td>}
@@ -214,7 +209,7 @@ export default async function LaporanPendaftar({ searchParams }: { searchParams:
                       <article className="item" key={r.id}>
                         <div className={`reg ${showProof ? "" : "no-proof"}`}>
                           <div>
-                            <h4><span style={{ color: "#86868b", fontWeight: 500 }}>{String(n).padStart(3, "0")}</span>{r.full_name}<span className={`tag ${r.status === "baru" || r.status === "diterima" ? "" : "gray"}`}>{STATUS[r.status] ?? r.status}</span></h4>
+                            <h4><span style={{ color: "#86868b", fontWeight: 500 }}>{String(n).padStart(3, "0")}</span>{r.full_name}</h4>
                             <dl>
                               <dt>Terdaftar</dt><dd>{fmtDT(r.created_at)}</dd>
                               {o.contact && <><dt>WhatsApp</dt><dd>{r.phone}</dd><dt>Email</dt><dd>{r.email || "—"}</dd></>}
@@ -229,7 +224,7 @@ export default async function LaporanPendaftar({ searchParams }: { searchParams:
                           {showProof && (
                             <div className="proof">
                               { }
-                              <img src={`/admin/bukti/${r.follow_proof}`} alt={`Bukti follow ${r.full_name}`} loading="eager" />
+                              <img src={`/api/admin/bukti/${r.follow_proof}`} alt={`Bukti follow ${r.full_name}`} loading="eager" />
                               <span>Bukti follow Instagram</span>
                             </div>
                           )}

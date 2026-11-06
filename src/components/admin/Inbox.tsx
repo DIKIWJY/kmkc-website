@@ -2,11 +2,16 @@
 
 import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { Search, Mail, MailOpen, Trash2, Reply, Download, CheckCheck, ArrowLeft, Loader2, Inbox as InboxIcon } from "lucide-react";
+import { Search, Mail, MailOpen, Trash2, Reply, Download, CheckCheck, ArrowLeft, Inbox as InboxIcon } from "lucide-react";
 import { setMessagesRead, deleteRecord } from "@/lib/admin/actions";
-import { useToast } from "./Toast";
+import { cn } from "@/lib/utils";
 import Pagination from "@/components/ui/Pagination";
 import RelTime from "@/components/ui/RelTime";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useToast } from "./Toast";
+import { ConfirmDialog } from "./ConfirmDialog";
 import { PageHeader, Card, EmptyState } from "./ui";
 import type { ContactMessage } from "@/lib/types";
 
@@ -85,51 +90,55 @@ export default function Inbox({ messages }: { messages: ContactMessage[] }) {
   return (
     <div>
       <PageHeader title="Pesan Masuk" subtitle={`${messages.length} pesan · ${unreadCount} belum dibaca`}>
-        <button onClick={() => mark(messages.filter((m) => !isRead(m)).map((m) => m.id), true)} disabled={!unreadCount} className="ad-btn">
-          <CheckCheck size={16} /> Tandai semua dibaca
-        </button>
-        <button onClick={exportCsv} disabled={!messages.length} className="ad-btn">
-          <Download size={16} /> Ekspor CSV
-        </button>
+        <Button variant="outline" onClick={() => mark(messages.filter((m) => !isRead(m)).map((m) => m.id), true)} disabled={!unreadCount}>
+          <CheckCheck /> Tandai semua dibaca
+        </Button>
+        <Button variant="outline" onClick={exportCsv} disabled={!messages.length}>
+          <Download /> Ekspor CSV
+        </Button>
       </PageHeader>
 
-      <Card className="overflow-hidden grid lg:grid-cols-[360px_1fr] lg:h-[calc(100dvh-15rem)] lg:min-h-[30rem]">
+      <Card className="grid overflow-hidden lg:h-[calc(100dvh-14rem)] lg:min-h-[30rem] lg:grid-cols-[360px_1fr]">
         {/* daftar */}
-        <div className={`min-h-0 flex-col border-r border-[var(--ad-line)] ${current ? "hidden lg:flex" : "flex"}`}>
-          <div className="space-y-3 border-b border-[var(--ad-line)] p-3">
+        <div className={cn("min-h-0 flex-col border-r", current ? "hidden lg:flex" : "flex")}>
+          <div className="space-y-3 border-b p-3">
             <div className="relative">
-              <Search size={16} className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-[var(--ad-faint)]" />
-              <input value={query} onChange={(e) => { setQuery(e.target.value); setPage(1); }} placeholder="Cari pesan" aria-label="Cari pesan" className="ad-input ad-input-search" />
+              <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" aria-hidden />
+              <Input type="search" value={query} onChange={(e) => { setQuery(e.target.value); setPage(1); }} placeholder="Cari pesan" aria-label="Cari pesan" className="pl-9" />
             </div>
-            <div className="ad-seg w-full" role="group" aria-label="Urutan">
-              {([false, true] as const).map((o) => (
-                <button key={String(o)} aria-pressed={oldest === o} onClick={() => { setOldest(o); setPage(1); }} className="flex-1">
-                  {o ? "Terlama" : "Terbaru"}
-                </button>
-              ))}
-            </div>
-            <div className="ad-seg w-full" role="group" aria-label="Filter">
-              {(["all", "unread"] as const).map((f) => (
-                <button key={f} aria-pressed={filter === f} onClick={() => { setFilter(f); setPage(1); }} className="flex-1">
-                  {f === "all" ? "Semua" : `Belum dibaca${unreadCount ? ` (${unreadCount})` : ""}`}
-                </button>
-              ))}
-            </div>
+            <Tabs value={oldest ? "old" : "new"} onValueChange={(v) => { setOldest(v === "old"); setPage(1); }}>
+              <TabsList className="w-full" aria-label="Urutan">
+                <TabsTrigger value="new" className="flex-1">Terbaru</TabsTrigger>
+                <TabsTrigger value="old" className="flex-1">Terlama</TabsTrigger>
+              </TabsList>
+            </Tabs>
+            <Tabs value={filter} onValueChange={(v) => { setFilter(v as "all" | "unread"); setPage(1); }}>
+              <TabsList className="w-full" aria-label="Filter">
+                <TabsTrigger value="all" className="flex-1">Semua</TabsTrigger>
+                <TabsTrigger value="unread" className="flex-1">Belum dibaca{unreadCount ? ` (${unreadCount})` : ""}</TabsTrigger>
+              </TabsList>
+            </Tabs>
           </div>
-          <div className="min-h-0 flex-1 overflow-y-auto ad-divide max-h-[60dvh] lg:max-h-none">
+          <div className="max-h-[60dvh] min-h-0 flex-1 divide-y overflow-y-auto lg:max-h-none">
             {list.length === 0 ? (
               <EmptyState icon={InboxIcon} title="Tidak ada pesan" />
             ) : (
               visible.map((m) => (
-                <button key={m.id} onClick={() => open(m)} className={`flex w-full gap-3 px-4 py-3.5 text-left transition-colors hover:bg-[rgba(0,0,0,0.03)] ${openId === m.id ? "bg-[var(--ad-blue-soft)] hover:bg-[var(--ad-blue-soft)]" : ""}`}>
-                  <span className={`mt-[7px] h-2 w-2 shrink-0 rounded-full ${isRead(m) ? "bg-transparent" : "bg-[var(--ad-blue)]"}`} aria-label={isRead(m) ? undefined : "Belum dibaca"} />
+                <button
+                  key={m.id}
+                  type="button"
+                  onClick={() => open(m)}
+                  aria-current={openId === m.id ? "true" : undefined}
+                  className={cn("flex w-full gap-3 px-4 py-3.5 text-left outline-none transition-colors hover:bg-accent/60 focus-visible:bg-accent/60", openId === m.id && "bg-accent hover:bg-accent")}
+                >
+                  <span className={cn("mt-[7px] size-2 shrink-0 rounded-full", isRead(m) ? "bg-transparent" : "bg-primary")} aria-label={isRead(m) ? undefined : "Belum dibaca"} />
                   <div className="min-w-0 flex-1">
                     <div className="flex justify-between gap-2">
-                      <p className={`truncate ${isRead(m) ? "text-[var(--ad-ink-2)]" : "font-semibold"}`}>{m.name}</p>
-                      <RelTime iso={m.created_at} className="whitespace-nowrap text-[12px] text-[var(--ad-faint)]" />
+                      <p className={cn("truncate", isRead(m) ? "text-muted-foreground" : "font-semibold")}>{m.name}</p>
+                      <RelTime iso={m.created_at} className="whitespace-nowrap text-xs text-muted-foreground" />
                     </div>
-                    <p className="truncate text-[14px]">{m.subject || "(tanpa subjek)"}</p>
-                    <p className="truncate text-[13px] text-[var(--ad-mute)]">{m.message}</p>
+                    <p className="truncate text-sm">{m.subject || "(tanpa subjek)"}</p>
+                    <p className="truncate text-[13px] text-muted-foreground">{m.message}</p>
                   </div>
                 </button>
               ))
@@ -139,35 +148,42 @@ export default function Inbox({ messages }: { messages: ContactMessage[] }) {
         </div>
 
         {/* isi pesan */}
-        <div className={`min-h-0 overflow-y-auto p-5 sm:p-8 ${current ? "block" : "hidden lg:flex items-center justify-center"}`}>
+        <div className={cn("min-h-0 overflow-y-auto p-5 sm:p-8", current ? "block" : "hidden items-center justify-center lg:flex")}>
           {!current ? (
-            <div className="text-center text-[var(--ad-faint)]"><MailOpen size={36} strokeWidth={1.4} className="mx-auto mb-3" /><p>Pilih pesan untuk membacanya</p></div>
+            <div className="text-center text-muted-foreground"><MailOpen className="mx-auto mb-3 size-9" strokeWidth={1.4} /><p>Pilih pesan untuk membacanya</p></div>
           ) : (
             <div>
-              <button onClick={() => setOpenId(null)} className="ad-btn ad-btn-plain mb-4 -ml-2 lg:hidden"><ArrowLeft size={16} /> Semua pesan</button>
+              <Button variant="ghost" size="sm" onClick={() => setOpenId(null)} className="-ml-2 mb-4 lg:hidden"><ArrowLeft /> Semua pesan</Button>
               <h2 className="break-words text-[22px] font-semibold tracking-tight">{current.subject || "(tanpa subjek)"}</h2>
-              <p className="mt-1.5 break-words text-[14px] text-[var(--ad-mute)]"><b className="font-medium text-[var(--ad-ink)]">{current.name}</b> · {current.email}</p>
-              <p className="mt-0.5 text-[13px] text-[var(--ad-faint)]">{when(current.created_at)}</p>
-              <div className="mt-6 whitespace-pre-wrap break-words rounded-xl bg-[rgba(0,0,0,0.03)] p-5 text-[15px] leading-relaxed">{current.message}</div>
+              <p className="mt-1.5 break-words text-sm text-muted-foreground"><b className="font-medium text-foreground">{current.name}</b> · {current.email}</p>
+              <p className="mt-0.5 text-[13px] text-muted-foreground">{when(current.created_at)}</p>
+              <div className="mt-6 whitespace-pre-wrap break-words rounded-xl bg-muted/60 p-5 text-[15px] leading-relaxed">{current.message}</div>
               <div className="mt-6 flex flex-wrap items-center gap-2">
-                <a href={`mailto:${current.email}?subject=${encodeURIComponent("Re: " + (current.subject || "Pesan untuk KMKC"))}`} className="ad-btn ad-btn-primary"><Reply size={16} /> Balas lewat email</a>
-                <button onClick={() => mark([current.id], !isRead(current))} className="ad-btn">
-                  {isRead(current) ? <><Mail size={16} /> Tandai belum dibaca</> : <><MailOpen size={16} /> Tandai dibaca</>}
-                </button>
-                {!confirmDel ? (
-                  <button onClick={() => setConfirmDel(true)} className="ad-btn ad-btn-danger sm:ml-auto"><Trash2 size={16} /> Hapus</button>
-                ) : (
-                  <div className="flex items-center gap-2 text-[14px] sm:ml-auto">
-                    <span className="text-[var(--ad-mute)]">Hapus permanen?</span>
-                    <button onClick={remove} disabled={busy} className="ad-btn ad-btn-sm ad-btn-danger-solid">{busy && <Loader2 size={13} className="animate-spin" />} Ya, hapus</button>
-                    <button onClick={() => setConfirmDel(false)} className="ad-btn ad-btn-sm">Batal</button>
-                  </div>
-                )}
+                <Button asChild>
+                  <a href={`mailto:${current.email}?subject=${encodeURIComponent("Re: " + (current.subject || "Pesan untuk KMKC"))}`}><Reply /> Balas lewat email</a>
+                </Button>
+                <Button variant="outline" onClick={() => mark([current.id], !isRead(current))}>
+                  {isRead(current) ? <><Mail /> Tandai belum dibaca</> : <><MailOpen /> Tandai dibaca</>}
+                </Button>
+                <Button variant="outline" onClick={() => setConfirmDel(true)} className="text-destructive hover:bg-destructive/10 hover:text-destructive sm:ml-auto">
+                  <Trash2 /> Hapus
+                </Button>
               </div>
             </div>
           )}
         </div>
       </Card>
+
+      {confirmDel && current && (
+        <ConfirmDialog
+          title="Hapus pesan ini?"
+          text={`Pesan dari ${current.name} akan dihapus permanen dan tidak bisa dikembalikan.`}
+          confirmLabel="Ya, hapus"
+          busy={busy}
+          onConfirm={remove}
+          onCancel={() => setConfirmDel(false)}
+        />
+      )}
     </div>
   );
 }

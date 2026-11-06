@@ -3,6 +3,7 @@ import Link from "next/link";
 import { getAdmin } from "@/lib/admin/guard";
 import { RESOURCES } from "@/lib/admin/schema";
 import ResourceManager from "@/components/admin/ResourceManager";
+import { Button } from "@/components/ui/button";
 
 export default async function Page() {
   const { supabase } = await getAdmin();
@@ -14,8 +15,8 @@ export default async function Page() {
       rows={data ?? []}
       headerExtra={
         <>
-          <Link href="/admin/pendaftar/laporan" className="ad-btn"><FileText size={16} /> Laporan PDF</Link>
-          <a href="/admin/pendaftar/export" className="ad-btn"><Download size={16} /> Unduh CSV</a>
+          <Button asChild variant="outline"><Link href="/admin/pendaftar/laporan"><FileText /> Laporan PDF</Link></Button>
+          <Button asChild variant="outline"><a href="/api/admin/pendaftar/export"><Download /> Unduh CSV</a></Button>
         </>
       }
     />

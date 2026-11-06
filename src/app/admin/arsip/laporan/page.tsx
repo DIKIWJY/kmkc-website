@@ -12,7 +12,7 @@ import "./report.css";
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: "Laporan arsip", robots: { index: false, follow: false } };
 
-type Reg = { id: string; full_name: string; phone: string; email: string; village: string; campus: string; major: string; batch: string; message: string; follow_proof: string; status: string; note: string; created_at: string };
+type Reg = { id: string; full_name: string; phone: string; email: string; village: string; campus: string; major: string; batch: string; message: string; follow_proof: string; note: string; created_at: string };
 
 const TZ = "Asia/Jakarta";
 const fmtD = (v?: string | null) => {
@@ -22,7 +22,7 @@ const fmtD = (v?: string | null) => {
 };
 const fmtDT = (v: string) => new Date(v).toLocaleString("id-ID", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit", timeZone: TZ }).replace(".", ":");
 const dayOf = (v?: string | null) => (v ? (/^\d{4}-\d{2}-\d{2}/.test(v) ? v.slice(0, 10) : new Date(v).toISOString().slice(0, 10)) : "");
-const STATUS: Record<string, string> = { baru: "Baru", dihubungi: "Dihubungi", diterima: "Diterima", ditolak: "Ditolak", upcoming: "Akan datang", ongoing: "Berjalan", completed: "Selesai" };
+const STATUS: Record<string, string> = { upcoming: "Akan datang", ongoing: "Berjalan", completed: "Selesai" };
 const nf = new Intl.NumberFormat("id-ID");
 
 /** Markdown ringan → paragraf teks biasa (laporan tidak memuat HTML/format penulis). */
@@ -255,7 +255,7 @@ export default async function Laporan({ searchParams }: { searchParams: Promise<
                     <article className="item" key={r.id}>
                       <div className={`reg ${showProof ? "" : "no-proof"}`}>
                         <div>
-                          <h4><span style={{ color: "#86868b", fontWeight: 500 }}>{String(i + 1).padStart(3, "0")}</span>{r.full_name}<span className={`tag ${r.status === "baru" || r.status === "diterima" ? "" : "gray"}`}>{STATUS[r.status] ?? r.status}</span></h4>
+                          <h4><span style={{ color: "#86868b", fontWeight: 500 }}>{String(i + 1).padStart(3, "0")}</span>{r.full_name}</h4>
                           <dl>
                             <dt>Terdaftar</dt><dd>{fmtDT(r.created_at)}</dd>
                             <dt>WhatsApp</dt><dd>{r.phone}</dd>
@@ -270,7 +270,7 @@ export default async function Laporan({ searchParams }: { searchParams: Promise<
                         {showProof && (
                           <div className="proof">
                             { }
-                            <img src={`/admin/bukti/${r.follow_proof}`} alt={`Bukti follow ${r.full_name}`} loading="eager" />
+                            <img src={`/api/admin/bukti/${r.follow_proof}`} alt={`Bukti follow ${r.full_name}`} loading="eager" />
                             <span>Bukti follow Instagram</span>
                           </div>
                         )}

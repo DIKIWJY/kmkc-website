@@ -30,6 +30,8 @@ export async function updateSession(request: NextRequest) {
   const isLogin = path === "/admin/login";
 
   if (!signedIn && !isLogin) {
+    // Endpoint API: jawab 401 (bukan mengalihkan ke halaman HTML login).
+    if (path.startsWith("/api/")) return NextResponse.json({ error: "Perlu masuk sebagai admin." }, { status: 401 });
     const url = request.nextUrl.clone();
     url.pathname = "/admin/login";
     url.search = "";

@@ -82,21 +82,21 @@ export default function Pagination({ page, pages, total, size, onChange, variant
   const to = Math.min(total, page * size);
 
   const base = admin
-    ? "inline-flex h-8 min-w-8 items-center justify-center rounded-[9px] px-2 text-[13px] font-medium tnum transition-colors"
+    ? "inline-flex h-8 min-w-8 items-center justify-center rounded-md px-2 text-[13px] font-medium tabular-nums transition-colors"
     : "inline-flex h-11 min-w-11 items-center justify-center rounded-full px-3 text-[15px] font-semibold tabular-nums transition-colors";
-  const on = admin ? "bg-[var(--ad-blue)] text-white" : "bg-primary-dark text-white shadow-md shadow-blue-900/20";
-  const off = admin ? "text-[var(--ad-ink-2)] hover:bg-black/5" : "text-neutral-600 hover:bg-primary/10 hover:text-primary-dark";
+  const on = admin ? "bg-primary text-primary-foreground" : "bg-primary-dark text-white shadow-md shadow-blue-900/20";
+  const off = admin ? "text-muted-foreground hover:bg-accent hover:text-accent-foreground" : "text-neutral-600 hover:bg-primary/10 hover:text-primary-dark";
   const arrow = `${base} ${off} disabled:pointer-events-none disabled:opacity-30`;
 
   return (
     <nav
       aria-label="Halaman"
       className={admin
-        ? `flex flex-col items-center gap-2 border-t border-[var(--ad-line)] px-4 py-3 text-[13px] text-[var(--ad-mute)] ${compact ? "" : "sm:flex-row sm:justify-between"}`
+        ? `flex flex-col items-center gap-2 border-t px-4 py-3 text-[13px] text-muted-foreground ${compact ? "" : "sm:flex-row sm:justify-between"}`
         : "mt-12 flex flex-col items-center gap-4 sm:mt-14"}
     >
       {!compact && (
-        <p className={admin ? "tnum" : "text-sm text-neutral-400"}>
+        <p className={admin ? "tabular-nums" : "text-sm text-neutral-400"}>
           Menampilkan {from}–{to} dari {total} {noun}
         </p>
       )}
@@ -107,12 +107,12 @@ export default function Pagination({ page, pages, total, size, onChange, variant
           </button>
         </li>
         {/* Ponsel: ringkas "Halaman 2 dari 5" agar tidak melebar; ≥sm: deretan nomor */}
-        <li className={`sm:hidden px-3 ${admin ? "text-[13px] text-[var(--ad-ink-2)]" : "text-[15px] font-semibold text-primary-dark"} tabular-nums`} aria-hidden>
+        <li className={`sm:hidden px-3 ${admin ? "text-[13px] text-foreground" : "text-[15px] font-semibold text-primary-dark"} tabular-nums`} aria-hidden>
           {page} / {pages}
         </li>
         {pageWindow(page, pages).map((n, i) =>
           n === "gap" ? (
-            <li key={`g${i}`} aria-hidden className={`hidden sm:block px-1 ${admin ? "text-[var(--ad-faint)]" : "text-neutral-300"}`}>…</li>
+            <li key={`g${i}`} aria-hidden className={`hidden sm:block px-1 ${admin ? "text-muted-foreground/60" : "text-neutral-300"}`}>…</li>
           ) : (
             <li key={n} className="hidden sm:block">
               <button

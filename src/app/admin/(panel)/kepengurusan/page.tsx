@@ -1,4 +1,6 @@
+import { TriangleAlert } from "lucide-react";
 import { getAdmin } from "@/lib/admin/guard";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import KepengurusanManager from "@/components/admin/KepengurusanManager";
 import { buildOrg } from "@/lib/org";
 import type { Division, Member, Period } from "@/lib/types";
@@ -19,9 +21,13 @@ export default async function Page() {
   return (
     <>
       {tablesMissing && (
-        <p role="alert" className="mb-5 rounded-[12px] bg-[var(--ad-red-soft)] px-4 py-3 text-[14px] text-[var(--ad-red)]">
-          Database belum diperbarui untuk fitur susunan kepengurusan. Jalankan ulang seluruh <code>supabase/schema.sql</code> di SQL Editor Supabase (aman diulang), lalu muat ulang halaman ini.
-        </p>
+        <Alert variant="destructive" className="mb-5">
+          <TriangleAlert />
+          <AlertTitle>Database belum diperbarui</AlertTitle>
+          <AlertDescription>
+            Fitur susunan kepengurusan butuh tabel baru. Jalankan ulang seluruh <code className="rounded bg-muted px-1 text-foreground">supabase/schema.sql</code> di SQL Editor Supabase (aman diulang), lalu muat ulang halaman ini.
+          </AlertDescription>
+        </Alert>
       )}
       <KepengurusanManager periods={periods} divisions={divisions} members={members} />
     </>

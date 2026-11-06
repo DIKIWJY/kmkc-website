@@ -1,11 +1,18 @@
+import { Skeleton } from "@/components/ui/skeleton";
+
 export default function Loading() {
   return (
-    <div aria-busy="true" aria-label="Memuat">
-      <div className="ad-skel mb-8 h-9 w-56" />
-      <div className="ad-skel mb-6 h-32 w-full" style={{ borderRadius: 14 }} />
+    <div aria-busy="true" aria-label="Memuat" className="space-y-6">
+      <div className="space-y-2">
+        <Skeleton className="h-8 w-56" />
+        <Skeleton className="h-4 w-80 max-w-full" />
+      </div>
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        {Array.from({ length: 4 }, (_, i) => <Skeleton key={i} className="h-28 rounded-xl" />)}
+      </div>
       <div className="grid gap-6 lg:grid-cols-3">
-        <div className="ad-skel h-72 lg:col-span-2" style={{ borderRadius: 14 }} />
-        <div className="ad-skel h-72" style={{ borderRadius: 14 }} />
+        <Skeleton className="h-80 rounded-xl lg:col-span-2" />
+        <Skeleton className="h-80 rounded-xl" />
       </div>
     </div>
   );

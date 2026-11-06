@@ -3,6 +3,8 @@
 import { useId, useMemo, useState } from "react";
 import { ArrowDownRight, ArrowUpRight, Minus } from "lucide-react";
 import type { DayStat } from "@/lib/admin/stats";
+import { cn } from "@/lib/utils";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const RANGES = [7, 30, 90] as const;
 const nf = new Intl.NumberFormat("id-ID");
@@ -38,13 +40,13 @@ const niceMax = (v: number) => {
 };
 
 function Delta({ cur, prev }: { cur: number; prev: number }) {
-  if (prev === 0 && cur === 0) return <span className="text-[13px] text-[var(--ad-faint)]">belum ada data</span>;
-  if (prev === 0) return <span className="text-[13px] font-medium text-[var(--ad-blue)]">baru</span>;
+  if (prev === 0 && cur === 0) return <span className="text-xs text-muted-foreground">belum ada data</span>;
+  if (prev === 0) return <span className="text-xs font-medium text-primary">baru</span>;
   const pct = Math.round(((cur - prev) / prev) * 100);
   const Icon = pct > 0 ? ArrowUpRight : pct < 0 ? ArrowDownRight : Minus;
   return (
-    <span className={`inline-flex items-center gap-0.5 text-[13px] font-medium ${pct > 0 ? "text-[var(--ad-blue)]" : "text-[var(--ad-mute)]"}`}>
-      <Icon size={13} /> {pct > 0 ? "+" : ""}{pct}%
+    <span className={cn("inline-flex items-center gap-0.5 text-xs font-medium", pct > 0 ? "text-success" : "text-muted-foreground")}>
+      <Icon className="size-3.5" /> {pct > 0 ? "+" : ""}{pct}%
     </span>
   );
 }
@@ -84,66 +86,58 @@ export default function TrafficPanel({ daily }: { daily: DayStat[] }) {
       <div className="flex flex-wrap items-start justify-between gap-x-8 gap-y-4">
         <div className="flex gap-8 sm:gap-10">
           <div>
-            <p className="flex items-center gap-2 text-[13px] font-medium text-[var(--ad-mute)]"><span className="h-0.5 w-3 rounded bg-[#0071e3]" />Tampilan halaman</p>
-            <p className="mt-1 text-[30px] font-semibold leading-tight tracking-tight tnum">{nf.format(views)}</p>
+            <p className="flex items-center gap-2 text-sm text-muted-foreground"><span className="h-0.5 w-3 rounded bg-chart-1" />Tampilan halaman</p>
+            <p className="mt-1 text-3xl font-semibold leading-tight tracking-tight tabular-nums">{nf.format(views)}</p>
             <Delta cur={views} prev={sum(prev, "views")} />
           </div>
           <div>
-            <p className="flex items-center gap-2 text-[13px] font-medium text-[var(--ad-mute)]"><span className="h-0.5 w-3 rounded bg-[#5ac8fa]" />Pengunjung</p>
-            <p className="mt-1 text-[30px] font-semibold leading-tight tracking-tight tnum">{nf.format(visitors)}</p>
+            <p className="flex items-center gap-2 text-sm text-muted-foreground"><span className="h-0.5 w-3 rounded bg-chart-2" />Pengunjung</p>
+            <p className="mt-1 text-3xl font-semibold leading-tight tracking-tight tabular-nums">{nf.format(visitors)}</p>
             <Delta cur={visitors} prev={sum(prev, "visitors")} />
           </div>
         </div>
-        <div role="tablist" aria-label="Rentang waktu" className="ad-seg">
-          {RANGES.map((r) => (
-            <button
-              key={r}
-              role="tab"
-              aria-selected={range === r}
-              onClick={() => { setRange(r); setHover(null); }}
-              className=""
-            >
-              {r} hari
-            </button>
-          ))}
-        </div>
+        <Tabs value={String(range)} onValueChange={(v) => { setRange(Number(v) as (typeof RANGES)[number]); setHover(null); }}>
+          <TabsList aria-label="Rentang waktu">
+            {RANGES.map((r) => <TabsTrigger key={r} value={String(r)} className="px-3">{r} hari</TabsTrigger>)}
+          </TabsList>
+        </Tabs>
       </div>
 
       <div className="mt-6 flex gap-3">
-        <div className="relative h-52 sm:h-60 w-8 shrink-0 text-[11px] text-[var(--ad-faint)] tnum" aria-hidden>
+        <div className="relative h-52 w-8 shrink-0 text-[11px] text-muted-foreground tabular-nums sm:h-60" aria-hidden>
           {ticks.map((t, i) => <span key={i} className="absolute right-0 -translate-y-1/2" style={{ top: `${i * 25}%` }}>{t >= 1000 ? `${t / 1000}k` : t}</span>)}
         </div>
-        <div className="flex-1 min-w-0">
-          <div className="relative h-52 sm:h-60 touch-pan-y" onPointerMove={onMove} onPointerLeave={() => setHover(null)} onPointerDown={onMove}>
-            {ticks.map((_, i) => <div key={i} className="absolute inset-x-0 border-t border-[var(--ad-line)]" style={{ top: `${i * 25}%` }} />)}
-            <svg viewBox="0 0 100 100" preserveAspectRatio="none" className="absolute inset-0 w-full h-full overflow-visible" role="img" aria-label={`Grafik tampilan halaman ${range} hari terakhir`}>
+        <div className="min-w-0 flex-1">
+          <div className="relative h-52 touch-pan-y sm:h-60" onPointerMove={onMove} onPointerLeave={() => setHover(null)} onPointerDown={onMove}>
+            {ticks.map((_, i) => <div key={i} className="absolute inset-x-0 border-t border-border" style={{ top: `${i * 25}%` }} />)}
+            <svg viewBox="0 0 100 100" preserveAspectRatio="none" className="absolute inset-0 size-full overflow-visible" role="img" aria-label={`Grafik tampilan halaman ${range} hari terakhir`}>
               <defs>
                 <linearGradient id={`g${gid}`} x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#0071e3" stopOpacity="0.2" />
-                  <stop offset="100%" stopColor="#0071e3" stopOpacity="0" />
+                  <stop offset="0%" style={{ stopColor: "var(--chart-1)", stopOpacity: 0.22 }} />
+                  <stop offset="100%" style={{ stopColor: "var(--chart-1)", stopOpacity: 0 }} />
                 </linearGradient>
               </defs>
               <path d={area} fill={`url(#g${gid})`} />
-              <path d={smooth(uPts)} fill="none" stroke="#5ac8fa" strokeWidth="2" vectorEffect="non-scaling-stroke" strokeLinecap="round" />
-              <path d={line} fill="none" stroke="#0071e3" strokeWidth="2.25" vectorEffect="non-scaling-stroke" strokeLinecap="round" />
-              {active && <line x1={X(hover!)} x2={X(hover!)} y1="0" y2="100" stroke="#1d1d1f" strokeOpacity="0.25" strokeWidth="1" vectorEffect="non-scaling-stroke" />}
+              <path d={smooth(uPts)} fill="none" style={{ stroke: "var(--chart-2)" }} strokeWidth="2" vectorEffect="non-scaling-stroke" strokeLinecap="round" />
+              <path d={line} fill="none" style={{ stroke: "var(--chart-1)" }} strokeWidth="2.25" vectorEffect="non-scaling-stroke" strokeLinecap="round" />
+              {active && <line x1={X(hover!)} x2={X(hover!)} y1="0" y2="100" style={{ stroke: "var(--muted-foreground)" }} strokeOpacity="0.5" strokeWidth="1" vectorEffect="non-scaling-stroke" />}
             </svg>
             {active && (
               <>
-                <span className="absolute w-3 h-3 rounded-full bg-[#0071e3] ring-2 ring-white -translate-x-1/2 -translate-y-1/2 pointer-events-none" style={{ left: `${X(hover!)}%`, top: `${Y(active.views)}%` }} />
-                <span className="absolute w-3 h-3 rounded-full bg-[#5ac8fa] ring-2 ring-white -translate-x-1/2 -translate-y-1/2 pointer-events-none" style={{ left: `${X(hover!)}%`, top: `${Y(active.visitors)}%` }} />
+                <span className="pointer-events-none absolute size-3 -translate-x-1/2 -translate-y-1/2 rounded-full bg-chart-1 ring-2 ring-card" style={{ left: `${X(hover!)}%`, top: `${Y(active.views)}%` }} />
+                <span className="pointer-events-none absolute size-3 -translate-x-1/2 -translate-y-1/2 rounded-full bg-chart-2 ring-2 ring-card" style={{ left: `${X(hover!)}%`, top: `${Y(active.visitors)}%` }} />
                 <div
-                  className="absolute top-0 z-10 pointer-events-none rounded-[10px] bg-[rgba(29,29,31,0.94)] text-white text-[12.5px] px-3 py-2 shadow-xl whitespace-nowrap backdrop-blur"
+                  className="pointer-events-none absolute top-0 z-10 whitespace-nowrap rounded-lg border bg-popover px-3 py-2 text-xs text-popover-foreground shadow-md"
                   style={{ left: `${X(hover!)}%`, transform: `translateX(${X(hover!) > 70 ? "calc(-100% - 12px)" : "12px"})` }}
                 >
                   <p className="font-semibold">{longDate(active.day)}</p>
-                  <p className="mt-1 flex items-center gap-2"><span className="w-2 h-2 rounded-full bg-[#4da3ff]" />{nf.format(active.views)} tampilan</p>
-                  <p className="flex items-center gap-2"><span className="w-2 h-2 rounded-full bg-[#5ac8fa]" />{nf.format(active.visitors)} pengunjung</p>
+                  <p className="mt-1 flex items-center gap-2"><span className="size-2 rounded-full bg-chart-1" />{nf.format(active.views)} tampilan</p>
+                  <p className="flex items-center gap-2"><span className="size-2 rounded-full bg-chart-2" />{nf.format(active.visitors)} pengunjung</p>
                 </div>
               </>
             )}
           </div>
-          <div className="relative h-5 mt-2 text-[11px] text-[var(--ad-faint)]" aria-hidden>
+          <div className="relative mt-2 h-5 text-[11px] text-muted-foreground" aria-hidden>
             {xLabels.map(({ i, d }) => (
               <span key={d.day} className="absolute whitespace-nowrap" style={{ left: `${X(i)}%`, transform: i === n - 1 ? "translateX(-100%)" : i === 0 ? "none" : "translateX(-50%)" }}>{shortDate(d.day)}</span>
             ))}

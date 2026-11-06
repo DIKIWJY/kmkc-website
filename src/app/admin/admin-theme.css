@@ -1,0 +1,188 @@
+/* =====================================================================
+   Tema panel admin KMKC — shadcn/ui dengan warna merek website publik.
+
+   Diimpor dari globals.css (agar @theme dibaca Tailwind), tetapi SEMUA nilai
+   di bawah hanya berlaku di dalam .adm (#admin-root). Halaman publik tidak
+   berubah: token merek publik (primary, accent, muted, border) hanya ditimpa
+   di dalam .adm, dan radius bawaan Tailwind hanya ditimpa di sini pula.
+   ===================================================================== */
+
+@custom-variant dark (&:is(.dark *));
+
+/* Token semantik shadcn → utilitas Tailwind (bg-background, text-foreground, bg-card, dst.).
+   primary / accent / muted / border sudah didefinisikan oleh tema merek publik di globals.css;
+   nilainya ditimpa di .adm di bawah. */
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+}
+
+/* ------------------------------------------------------------------ terang */
+.adm {
+  --radius: 0.625rem;
+  /* Menimpa skala radius bawaan Tailwind HANYA di panel admin. */
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+
+  --background: #f4f7fc;
+  --foreground: #0f1b36;
+  --card: #ffffff;
+  --card-foreground: #0f1b36;
+  --popover: #ffffff;
+  --popover-foreground: #0f1b36;
+  --primary: #1e4fa3;
+  --primary-foreground: #ffffff;
+  --secondary: #e8f0fb;
+  --secondary-foreground: #0f2a5c;
+  --muted: #eef3fb;
+  --muted-foreground: #5b6577;
+  --accent: #e8f0fb;
+  --accent-foreground: #0f2a5c;
+  --destructive: #d92d20;
+  --success: #15803d;
+  --warning: #b45309;
+  --border: #dfe8f5;
+  --input: #cbd8ec;
+  --ring: #2f6fd0;
+
+  --chart-1: #1e4fa3;
+  --chart-2: #0ea5e9;
+  --chart-3: #7cb8f4;
+  --chart-4: #0f2a5c;
+  --chart-5: #14b8a6;
+
+  /* Sidebar biru-malam (identitas KMKC), rata tanpa gradasi. */
+  --sidebar: #0b1d45;
+  --sidebar-foreground: #c3d1ec;
+  --sidebar-primary: #4ea8ff;
+  --sidebar-primary-foreground: #06122b;
+  --sidebar-accent: rgba(255, 255, 255, 0.08);
+  --sidebar-accent-foreground: #ffffff;
+  --sidebar-border: rgba(255, 255, 255, 0.1);
+  --sidebar-ring: #4ea8ff;
+
+  /* Token merek publik → nilai admin (lihat catatan di globals.css). */
+  --color-primary: var(--primary);
+  --color-accent: var(--accent);
+  --color-muted: var(--muted);
+  --color-border: var(--border);
+
+  min-height: 100svh;
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans);
+  font-size: 14px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  color-scheme: light;
+}
+
+/* ------------------------------------------------------------------- gelap */
+.adm.dark {
+  --background: #070f21;
+  --foreground: #e6edf9;
+  --card: #0d1a33;
+  --card-foreground: #e6edf9;
+  --popover: #101f3d;
+  --popover-foreground: #e6edf9;
+  --primary: #4ea8ff;
+  --primary-foreground: #06122b;
+  --secondary: #14234a;
+  --secondary-foreground: #e6edf9;
+  --muted: #12213f;
+  --muted-foreground: #93a4c3;
+  --accent: #172853;
+  --accent-foreground: #e6edf9;
+  --destructive: #f87171;
+  --success: #4ade80;
+  --warning: #fbbf24;
+  --border: rgba(255, 255, 255, 0.09);
+  --input: rgba(255, 255, 255, 0.14);
+  --ring: #4ea8ff;
+
+  --chart-1: #4ea8ff;
+  --chart-2: #38bdf8;
+  --chart-3: #93c5fd;
+  --chart-4: #1e4fa3;
+  --chart-5: #2dd4bf;
+
+  --sidebar: #050c1c;
+  --sidebar-foreground: #aebcd9;
+  --sidebar-primary: #4ea8ff;
+  --sidebar-primary-foreground: #06122b;
+  --sidebar-accent: rgba(255, 255, 255, 0.07);
+  --sidebar-accent-foreground: #ffffff;
+  --sidebar-border: rgba(255, 255, 255, 0.08);
+  --sidebar-ring: #4ea8ff;
+
+  color-scheme: dark;
+}
+
+/* -------------------------------------------------------------------- dasar */
+@layer base {
+  .adm *,
+  .adm ::before,
+  .adm ::after {
+    border-color: var(--border);
+    outline-color: color-mix(in oklab, var(--ring) 50%, transparent);
+  }
+  .adm * {
+    scrollbar-width: thin;
+    scrollbar-color: color-mix(in oklab, var(--muted-foreground) 40%, transparent) transparent;
+  }
+  .adm ::-webkit-scrollbar-thumb {
+    background: color-mix(in oklab, var(--muted-foreground) 40%, transparent);
+    border-radius: 999px;
+  }
+  .adm ::selection {
+    background: color-mix(in oklab, var(--primary) 25%, transparent);
+  }
+  .adm button:not(:disabled),
+  .adm [role="button"]:not(:disabled) {
+    cursor: pointer;
+  }
+  /* Dasar Radix: jangan kunci scroll halaman (header lengket tetap bekerja). */
+  body[data-scroll-locked] {
+    overflow: unset !important;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .adm *,
+  .adm *::before,
+  .adm *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

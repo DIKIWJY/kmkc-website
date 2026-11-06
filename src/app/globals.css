@@ -1,6 +1,12 @@
 @import "tailwindcss";
+@import "tw-animate-css";
+/* Token tema panel admin (shadcn/ui). Semua nilainya hanya berlaku di dalam #admin-root, website publik tidak berubah. */
+@import "./admin/admin-theme.css";
 
-@theme inline {
+/* Warna merek. SENGAJA bukan `inline`: utilitas memakai var(--color-*), sehingga panel admin
+   (yang memakai nama token sama seperti shadcn: primary, accent, muted, border) bisa menimpa nilainya
+   di dalam #admin-root tanpa menyentuh halaman publik. */
+@theme {
   --color-primary: #1e4fa3;        /* royal blue (BNCC-style) */
   --color-primary-light: #2f6fd0;
   --color-primary-dark: #0f2a5c;
@@ -12,6 +18,9 @@
   --color-surface-alt: #e8f0fb;
   --color-muted: #5b6577;
   --color-border: #dfe8f5;
+}
+
+@theme inline {
   --font-sans: "Plus Jakarta Sans Variable", system-ui, -apple-system, "Segoe UI", sans-serif;
   --font-heading: "Plus Jakarta Sans Variable", system-ui, -apple-system, "Segoe UI", sans-serif;
 }

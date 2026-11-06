@@ -7,7 +7,8 @@ Website organisasi + **Admin Panel** untuk mengelola semua kontennya tanpa menye
 | Lapisan | Teknologi | Fungsi |
 |---|---|---|
 | Framework | **Next.js 16** (App Router, Turbopack) + **React 19** + **TypeScript** | Halaman publik statis (ISR), admin dinamis, Server Actions |
-| Styling | **Tailwind CSS v4**, font Montserrat (judul) + Poppins (teks), ikon `lucide-react` | Desain; animasi memakai mesin kecil buatan sendiri (`src/components/Motion.tsx`, tanpa library) |
+| Styling | **Tailwind CSS v4**, font Plus Jakarta Sans, ikon `lucide-react` | Desain; animasi memakai mesin kecil buatan sendiri (`src/components/Motion.tsx`, tanpa library) |
+| Admin UI | **shadcn/ui** (Radix + `class-variance-authority`), `sonner` (notifikasi), `cmdk` (palet perintah) | Komponen panel admin yang aksesibel, berbasis template shadcn-admin; tema terkurung di `.adm` |
 | Database | **Supabase** (PostgreSQL) + **Row Level Security** | Menyimpan pengurus, program, agenda, galeri, berita, pesan, pengaturan, log |
 | Auth | **Supabase Auth** (`@supabase/ssr`, session di cookie httpOnly) + tabel `admins` | Login admin yang aman |
 | File | **Supabase Storage** (bucket `media`) | Foto — dikompres jadi WebP di browser sebelum diunggah |
@@ -47,10 +48,10 @@ Semua halaman punya alamat sendiri (tanpa `#`): `/`, `/tentang`, `/kepengurusan`
 **Jalan pintas login admin** (semua diarahkan ke `/admin/login`): `/login`, `/masuk`, `/admin-login`. Alamat lama seperti `/#kontak` tetap membuka beranda; alias lain diatur di `next.config.ts`.
 
 ## Pendaftaran anggota (`/daftar`)
-- **Formulir bawaan**: semua isian wajib, termasuk **alasan bergabung** (min. 20 karakter) dan **bukti follow Instagram** (tangkapan layar). Gambar dikecilkan di browser (±100–250 KB) lalu masuk ke bucket **privat** `bukti`: pengunjung hanya bisa mengunggah, tidak bisa melihat; hanya admin yang bisa membukanya (lewat `/admin/bukti/…`).
+- **Formulir bawaan**: semua isian wajib, termasuk **alasan bergabung** (min. 20 karakter) dan **bukti follow Instagram** (tangkapan layar). Gambar dikecilkan di browser (±100–250 KB) lalu masuk ke bucket **privat** `bukti`: pengunjung hanya bisa mengunggah, tidak bisa melihat; hanya admin yang bisa membukanya (lewat `/api/admin/bukti/…`).
 - **Kepengurusan per periode (v11)**: Admin → Kepengurusan. Setiap **periode** (mis. 2025/2026) punya susunannya sendiri: tambah/ubah/hapus/urutkan **bidang atau departemen** sesuka hati, lalu isi tiap bidang dengan pengurus berjabatan bebas (Ketua Umum, Wakil Ketua Umum 1 & 2, Sekretaris Umum 1 & 2, Bendahara Umum, Ketua Departemen …, atau jabatan lain). Periode baru bisa dimulai dari **susunan KMKC** (Presidium + Departemen Pendidikan, PKMB, Humas, Medinfo, Kewirausahaan, Kesehatan), **disalin dari periode lain** (bidang saja, pengurus dikosongkan), atau kosong. Satu periode ditandai **aktif** dan itulah yang tampil di website; periode lama tetap bisa dibuka pengunjung sebagai arsip. Di /kepengurusan pengunjung memilih periode, lalu bidang; tiap bidang dibagi halaman (12 per halaman) dan tautannya bisa dibagikan (`?periode=…&bidang=…`). Mengubah nama bidang/periode otomatis diikuti pengurusnya; menghapus bidang/periode ikut menghapus pengurus (dan foto) di dalamnya, dengan konfirmasi. Tabel baru: `periods` dan `divisions`; data pengurus lama dipindahkan otomatis oleh `schema.sql`.
 - **Urutan & waktu relatif (v11)**: setiap daftar di admin (pendaftar, berita, galeri, dst.) punya menu Urutkan — Terbaru, Terlama, Nama A–Z/Z–A — dan judul kolom Nama/tanggal bisa diklik untuk mengurutkan. Kolom "Masuk" pada pendaftar, Pesan Masuk, dan Log Aktivitas menampilkan waktu relatif ("1 menit lalu", "2 jam lalu", "3 hari lalu"; lewat seminggu jadi tanggal) yang diperbarui otomatis; tanggal lengkap muncul saat kursor diarahkan. Tombol naik/turun (Kepengurusan, Program) hanya aktif di "Urutan tampil".
-- **Tipografi (v11)**: situs publik memakai satu keluarga huruf, Plus Jakarta Sans (variabel, dimuat sekali, menggantikan Montserrat + Poppins). Admin memakai SF Pro di perangkat Apple dan Inter (dengan sumbu optical size) di perangkat lain.
+- **Tipografi (v11)**: situs publik memakai satu keluarga huruf, Plus Jakarta Sans (variabel, dimuat sekali, menggantikan Montserrat + Poppins). Admin memakai keluarga huruf yang sama (Plus Jakarta Sans) supaya tampilannya senada dengan website.
 - **HTM (biaya pendaftaran) + bukti bayar**: isi nominal di Pengaturan → Pendaftaran anggota (kosong/0 = tanpa HTM), lengkap dengan petunjuk rekening/e-wallet dan gambar QRIS. Bila HTM > 0, formulir menampilkan nominal + tujuan pembayaran dan **mewajibkan unggah bukti transfer** (bucket privat `bukti` yang sama). Nominal dibaca server dari database, dan aturan RLS menolak pendaftaran tanpa bukti bila HTM berlaku. Di menu Pendaftar, admin cukup membuka bukti bayar bila perlu (tanpa alur status verifikasi — sengaja disederhanakan). Nominal saat mendaftar tersimpan per pendaftar (`fee_amount`), jadi tidak berubah bila HTM diganti kemudian. CSV dan laporan PDF pendaftar ikut menampilkan nominal HTM serta total yang masuk.
 - **Google Form**: di Pengaturan → Pendaftaran anggota, pilih mode Google Form dan tempel tautannya. Hanya tautan `docs.google.com/forms/…` atau `forms.gle/…` yang diterima. Tautan `…/viewform` otomatis ditanam di halaman.
 - **Buka/tutup**: saklar di Pengaturan. Saat ditutup, /daftar menampilkan pemberitahuan (dan catatan yang kamu tulis) tanpa formulir.
@@ -77,9 +78,32 @@ Komponen: `src/components/ui/Pagination.tsx` (nomor halaman + hook `usePaged`) d
 - **Cadangan JSON** seluruh tabel (untuk pemulihan oleh teknisi).
 
 ## Fitur Admin Panel (`/admin`)
-Tampilan bergaya Apple: netral abu-putih, satu warna biru, font sistem Apple (SF Pro di perangkat Apple, Inter di lainnya). Gaya terkurung di `src/app/admin/admin.css` (kelas `ad-*`, hanya aktif di bawah `.adm`). Di HP, tabel berubah jadi daftar kartu dan formulir tambah/edit muncul sebagai lembar dari bawah dengan isi yang bisa di-scroll.
+Antarmuka admin dibangun dari template **shadcn-admin** (shadcn/ui + Radix + Tailwind), disesuaikan dengan warna dan font KMKC: biru royal `#1e4fa3`, sidebar biru dongker, Plus Jakarta Sans. Fitur bawaan template: sidebar yang bisa dilipat (state tersimpan di cookie), mode terang/gelap (tanpa kedipan saat dimuat), breadcrumb, dan palet perintah.
+
+- **Responsif**: di HP sidebar berubah jadi laci, tabel menjadi daftar kartu, dan formulir tambah/edit muncul sebagai panel samping yang bisa di-scroll (`Sheet`). Perubahan yang belum disimpan dikonfirmasi sebelum panel ditutup.
+- **Tema terkurung**: token warna shadcn ada di `src/app/admin/admin-theme.css` dan hanya berlaku di bawah `#admin-root` (kelas `.adm`), jadi tampilan website publik tidak berubah. Dialog/menu Radix dirender ke dalam `#admin-root` lewat `src/lib/portal.ts` agar ikut tema.
+- **Komponen UI** ada di `src/components/ui/` (hasil salinan shadcn); bagian khusus admin ada di `src/components/admin/` (`shell/` = sidebar, header, menu pengguna, palet perintah).
+- **Lisensi**: template shadcn-admin berlisensi MIT; pemberitahuannya ada di `THIRD_PARTY_NOTICES.md`.
+- **Mode gelap**: tombol di header; pilihan disimpan di cookie `admin-theme`. Lembar laporan PDF tetap berkertas putih.
+
+### Alamat admin & API
+| Halaman | Alamat |
+|---|---|
+| Ringkasan | `/admin` |
+| Berita · Galeri · Agenda · Program Kerja | `/admin/berita` · `/admin/galeri` · `/admin/agenda` · `/admin/program-kerja` |
+| Kepengurusan · Pendaftar | `/admin/kepengurusan` · `/admin/pendaftar` (laporan: `/admin/pendaftar/laporan`) |
+| Pesan Masuk · Log Aktivitas | `/admin/pesan` · `/admin/aktivitas` |
+| Arsip & Cadangan · Pengaturan | `/admin/arsip` · `/admin/pengaturan` |
+
+Alamat lama (`/admin/gallery`, `/admin/settings`, `/admin/program`) dialihkan otomatis (301).
+
+Semua endpoint berkas ada di bawah satu awalan, `/api/admin/*`, dan dijaga `src/proxy.ts` (tanpa login → `401` JSON, bukan halaman login), dengan `Cache-Control: no-store`:
+- `GET /api/admin/backup` — cadangan JSON seluruh tabel
+- `GET /api/admin/pendaftar/export` — CSV pendaftar
+- `GET /api/admin/bukti/[name]` — bukti follow/pembayaran (bucket privat)
+
 - **Dashboard analitik**: grafik area tampilan & pengunjung (7/30/90 hari, tooltip, % perubahan), donat perangkat, sumber kunjungan (Instagram/WhatsApp/Google/…), halaman terpopuler, kartu KPI + sparkline, grafik pesan 14 hari, checklist kelengkapan, pendaftar & aktivitas terbaru. Data dari pencacah sendiri (`/api/track`): **tanpa cookie pelacak, tanpa IP**, hanya agregat harian, bot disaring, menghormati Do Not Track, `/admin` tidak dihitung.
-- **Pendaftar**: status (baru/dihubungi/diterima/ditolak), catatan internal, **unduh CSV** (aman dari CSV-injection).
+- **Pendaftar**: setiap pendaftar otomatis menjadi anggota; admin dapat mengedit atau menghapus data (dengan konfirmasi), mencatat catatan internal, dan **mengunduh CSV** (aman dari CSV-injection).
 - **Kepengurusan**: tambah/edit/hapus, foto, **atur urutan** (naik/turun).
 - **Program Kerja**: status (akan datang/berjalan/selesai), ikon, tanggal.
 - **Agenda**: tanggal, jam, lokasi, poster, tautan pendaftaran (wajib https).
@@ -151,7 +175,11 @@ src/app/                    feed.xml, opengraph-image, manifest, sitemap, robots
 src/lib/routes.ts           daftar menu navbar/footer/sitemap
 src/components/            komponen publik (History, Agenda, Countdown, Gallery, ...)
 src/lib/date.ts             utilitas tanggal WIB, hitung hari, tautan Google Calendar
-src/app/admin/              login + (panel): dashboard, CRUD, pendaftar (+CSV), pesan, pengaturan, log; backup/ (unduh JSON)
+src/app/admin/              login + (panel): ringkasan, CRUD, pendaftar, pesan, pengaturan, log; arsip/ (laporan cetak)
+src/app/api/admin/          backup, pendaftar/export, bukti/[name] (semua di balik login)
+src/app/admin/admin-theme.css  token tema shadcn khusus admin (.adm)
+src/components/ui/          komponen shadcn/ui (button, table, sheet, dialog, sidebar, ...)
+src/components/admin/shell/ kerangka admin: sidebar, header, menu pengguna, palet perintah
 src/app/api/track           pencacah kunjungan (tanpa cookie) → RPC track_view
 src/app/(site)/daftar       formulir pendaftaran anggota
 src/components/admin/charts grafik SVG ringan (area, donat, batang, sparkline)

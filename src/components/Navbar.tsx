@@ -4,8 +4,8 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import Logo from "@/components/ui/Logo";
-import { Menu, X } from "lucide-react";
-import { MAIN_NAV, MORE_NAV } from "@/lib/routes";
+import { LogIn, Menu, X } from "lucide-react";
+import { ADMIN_LOGIN, BAR_NAV, MORE_NAV } from "@/lib/routes";
 
 const isActive = (path: string, href: string) => (href === "/" ? path === "/" : path === href || path.startsWith(href + "/"));
 
@@ -33,7 +33,7 @@ export default function Navbar({ name = "KMKC" }: { name?: string }) {
           </Link>
 
           <ul className="hidden xl:flex items-center gap-1">
-            {MAIN_NAV.map((l) => {
+            {BAR_NAV.map((l) => {
               const on = isActive(path, l.href);
               return (
                 <li key={l.href}>
@@ -52,6 +52,14 @@ export default function Navbar({ name = "KMKC" }: { name?: string }) {
           </ul>
 
           <div className="flex items-center gap-1.5">
+            <Link
+              href={ADMIN_LOGIN}
+              rel="nofollow"
+              className="hidden sm:inline-flex h-10 items-center gap-2 rounded-full px-3.5 text-sm font-medium text-neutral-700 hover:text-primary hover:bg-black/[0.04] transition-colors"
+            >
+              <LogIn size={16} aria-hidden />
+              Masuk
+            </Link>
             <Link
               href="/daftar"
               data-magnetic
@@ -77,7 +85,7 @@ export default function Navbar({ name = "KMKC" }: { name?: string }) {
           <button className="fixed inset-0 -z-10 bg-black/20 xl:hidden" aria-label="Tutup menu" onClick={close} tabIndex={-1} />
           <div id="menu-situs" className="max-w-6xl mx-auto mt-2 rounded-3xl bg-white shadow-2xl ring-1 ring-black/5 animate-fade-in overflow-hidden max-h-[calc(100dvh-5.5rem)] overflow-y-auto overscroll-contain xl:hidden">
             <ul className="grid sm:grid-cols-2 gap-0.5 p-2.5">
-              {[...MAIN_NAV, ...MORE_NAV].map((l) => {
+              {[...BAR_NAV, MORE_NAV[1]].map((l) => {
                 const on = isActive(path, l.href);
                 return (
                   <li key={l.href}>
@@ -94,9 +102,12 @@ export default function Navbar({ name = "KMKC" }: { name?: string }) {
                 );
               })}
             </ul>
-            <div className="p-2.5 pt-0 sm:hidden">
-              <Link href="/daftar" className="flex h-12 items-center justify-center rounded-2xl bg-primary-dark text-white text-[15px] font-semibold">
+            <div className="grid gap-2 p-2.5 pt-0">
+              <Link href="/daftar" className="flex h-12 items-center justify-center rounded-2xl bg-primary-dark text-white text-[15px] font-semibold sm:hidden">
                 Gabung jadi anggota
+              </Link>
+              <Link href={ADMIN_LOGIN} rel="nofollow" className="flex h-12 items-center justify-center gap-2 rounded-2xl border border-neutral-200 text-[15px] font-medium text-neutral-700 hover:bg-black/[0.04] sm:hidden">
+                <LogIn size={17} aria-hidden /> Masuk admin
               </Link>
             </div>
           </div>

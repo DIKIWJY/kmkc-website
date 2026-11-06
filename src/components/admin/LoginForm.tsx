@@ -1,8 +1,12 @@
 "use client";
 
 import { useActionState, useState } from "react";
-import { Eye, EyeOff, Loader2 } from "lucide-react";
+import { AlertCircle, Eye, EyeOff, Loader2 } from "lucide-react";
 import { signIn } from "@/lib/admin/actions";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
 export default function LoginForm({ notice }: { notice?: string }) {
   const [state, action, pending] = useActionState(signIn, undefined);
@@ -10,34 +14,38 @@ export default function LoginForm({ notice }: { notice?: string }) {
   const error = state?.error ?? notice;
 
   return (
-    <form action={action} className="space-y-4">
-      <div className="ad-card overflow-hidden">
-        <label htmlFor="email" className="sr-only">Email</label>
-        <input
-          id="email" name="email" type="email" required autoComplete="username" autoFocus placeholder="Email"
-          className="block h-14 w-full bg-transparent px-4 text-[16px] outline-none placeholder:text-[#a1a1a6] focus:bg-[var(--ad-blue-soft)]/40"
-        />
-        <div className="relative border-t border-[var(--ad-line)]">
-          <label htmlFor="password" className="sr-only">Kata sandi</label>
-          <input
-            id="password" name="password" type={show ? "text" : "password"} required autoComplete="current-password" placeholder="Kata sandi"
-            className="block h-14 w-full bg-transparent px-4 pr-12 text-[16px] outline-none placeholder:text-[#a1a1a6] focus:bg-[var(--ad-blue-soft)]/40"
+    <form action={action} className="space-y-5">
+      <div className="space-y-2">
+        <Label htmlFor="email">Email</Label>
+        <Input id="email" name="email" type="email" required autoComplete="username" autoFocus placeholder="nama@email.com" className="h-10" />
+      </div>
+      <div className="space-y-2">
+        <Label htmlFor="password">Kata sandi</Label>
+        <div className="relative">
+          <Input
+            id="password" name="password" type={show ? "text" : "password"} required autoComplete="current-password"
+            placeholder="Kata sandi" className="h-10 pe-11"
           />
-          <button
-            type="button" onClick={() => setShow(!show)}
-            className="ad-icon-btn absolute right-2 top-1/2 -translate-y-1/2"
+          <Button
+            type="button" variant="ghost" size="icon" onClick={() => setShow(!show)}
+            className="absolute end-1 top-1/2 size-8 -translate-y-1/2 text-muted-foreground"
             aria-label={show ? "Sembunyikan kata sandi" : "Tampilkan kata sandi"}
           >
-            {show ? <EyeOff size={18} /> : <Eye size={18} />}
-          </button>
+            {show ? <EyeOff /> : <Eye />}
+          </Button>
         </div>
       </div>
 
-      {error && <p role="alert" className="rounded-[10px] bg-[var(--ad-red-soft)] px-3.5 py-2.5 text-[13.5px] text-[var(--ad-red)]">{error}</p>}
+      {error && (
+        <Alert variant="destructive" role="alert">
+          <AlertCircle />
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
+      )}
 
-      <button disabled={pending} className="ad-btn ad-btn-primary ad-btn-lg w-full">
-        {pending ? <><Loader2 size={18} className="animate-spin" /> Memeriksa…</> : "Masuk"}
-      </button>
+      <Button type="submit" disabled={pending} size="lg" className="w-full">
+        {pending ? <><Loader2 className="animate-spin" /> Memeriksa…</> : "Masuk"}
+      </Button>
     </form>
   );
 }

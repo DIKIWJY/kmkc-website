@@ -220,7 +220,7 @@ export const RESOURCES: Record<string, Resource> = {
     table: "registrations",
     title: "Pendaftar Anggota",
     singular: "Pendaftar",
-    description: "Masuk dari halaman /daftar bersama bukti follow Instagram dan bukti bayar HTM. Ubah status setelah dihubungi, lalu unduh CSV atau buat laporan PDF.",
+    description: "Masuk dari halaman /daftar bersama bukti follow Instagram dan bukti bayar HTM. Setiap pendaftar otomatis tercatat sebagai anggota. Perbaiki data yang keliru lewat Edit, atau hapus bila salah input; unduh CSV atau buat laporan PDF kapan saja.",
     fields: [
       { name: "full_name", label: "Nama lengkap", type: "text", required: true, max: 120 },
       { name: "phone", label: "WhatsApp", type: "text", required: true, half: true, max: 24 },
@@ -233,10 +233,6 @@ export const RESOURCES: Record<string, Resource> = {
       { name: "follow_proof", label: "Bukti follow Instagram", type: "proof", help: "Diunggah pendaftar. Hanya admin yang bisa melihat." },
       { name: "payment_proof", label: "Bukti pembayaran HTM", type: "proof", help: "Diunggah pendaftar bila HTM berlaku. Periksa nominal dan tanggalnya." },
       { name: "fee_amount", label: "Nominal HTM (Rp)", type: "number", half: true, help: "Nominal yang berlaku saat pendaftar mengirim formulir." },
-      {
-        name: "status", label: "Status", type: "select", required: true, half: true,
-        options: [{ value: "baru", label: "Baru" }, { value: "dihubungi", label: "Sudah dihubungi" }, { value: "diterima", label: "Diterima" }, { value: "ditolak", label: "Ditolak" }],
-      },
       { name: "note", label: "Catatan internal", type: "textarea", max: 1000, help: "Hanya terlihat oleh admin." },
     ],
     columns: [
@@ -245,13 +241,12 @@ export const RESOURCES: Record<string, Resource> = {
       { key: "village", label: "Desa" },
       { key: "follow_proof", label: "Bukti IG", type: "bool", boolLabels: ["Ada", "Belum"] },
       { key: "fee_amount", label: "HTM", type: "money" },
-      { key: "status", label: "Status", type: "badge" },
       { key: "created_at", label: "Masuk", type: "date" },
     ],
     labelField: "full_name",
     searchFields: ["full_name", "phone", "campus", "village", "major", "message"],
     order: { col: "created_at", asc: false },
-    defaults: { status: "baru" },
+    defaults: {},
     revalidate: [],
     imageFields: [],
   },
@@ -262,9 +257,9 @@ export const RESOURCE_KEYS = Object.keys(RESOURCES);
 /** Alamat halaman admin untuk tiap resource (dipakai pencarian global & tautan). */
 export const ADMIN_PATH: Record<string, string> = {
   members: "/admin/kepengurusan",
-  programs: "/admin/program",
+  programs: "/admin/program-kerja",
   events: "/admin/agenda",
-  gallery: "/admin/gallery",
+  gallery: "/admin/galeri",
   articles: "/admin/berita",
   registrations: "/admin/pendaftar",
 };

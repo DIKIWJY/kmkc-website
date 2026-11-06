@@ -1,17 +1,9 @@
 /** Opsi & penyaringan Laporan Pendaftar (dipakai form di klien dan halaman laporan di server). */
-export const REG_STATUSES = [
-  { key: "baru", label: "Baru" },
-  { key: "dihubungi", label: "Dihubungi" },
-  { key: "diterima", label: "Diterima" },
-  { key: "ditolak", label: "Ditolak" },
-] as const;
-
-export type RegGroup = "none" | "village" | "campus" | "batch" | "status";
+export type RegGroup = "none" | "village" | "campus" | "batch";
 export type RegSort = "new" | "old" | "name";
 export type RegView = "rekap" | "detail";
 
 export interface RegOptions {
-  statuses: string[];
   from: string;
   to: string;
   village: string;
@@ -31,7 +23,6 @@ export interface RegOptions {
 
 export interface RegLite {
   id: string;
-  status: string;
   village: string;
   campus: string;
   batch: string;
@@ -39,7 +30,6 @@ export interface RegLite {
 }
 
 const DATE = /^\d{4}-\d{2}-\d{2}$/;
-const ALL_STATUS = REG_STATUSES.map((s) => s.key) as string[];
 
 export const norm = (v: string) => v.replace(/\s+/g, " ").trim().toLowerCase();
 /** Hari kalender WIB (UTC+7) dari stempel waktu, format YYYY-MM-DD. */
@@ -47,7 +37,7 @@ export const wibDay = (iso: string) => new Date(Date.parse(iso) + 7 * 3600e3).to
 
 export function defaultRegOptions(): RegOptions {
   return {
-    statuses: [...ALL_STATUS], from: "", to: "", village: "", campus: "", batch: "",
+    from: "", to: "", village: "", campus: "", batch: "",
     view: "rekap", group: "none", sort: "new",
     stats: true, reason: true, proofs: true, contact: true, notes: false, sign: false, auto: false,
   };
@@ -56,18 +46,16 @@ export function defaultRegOptions(): RegOptions {
 export function parseRegOptions(sp: Record<string, string | string[] | undefined>): RegOptions {
   const d = defaultRegOptions();
   const one = (k: string) => (Array.isArray(sp[k]) ? sp[k]![0] : (sp[k] as string | undefined)) ?? "";
-  const picked = one("st").split(",").filter((s) => ALL_STATUS.includes(s));
   const flag = (k: string, def: boolean) => (one(k) === "" ? def : one(k) === "1");
   const pick = <T extends string>(k: string, allowed: readonly T[], def: T): T => (allowed as readonly string[]).includes(one(k)) ? (one(k) as T) : def;
   return {
-    statuses: picked.length ? picked : d.statuses,
     from: DATE.test(one("from")) ? one("from") : "",
     to: DATE.test(one("to")) ? one("to") : "",
     village: one("village").slice(0, 120),
     campus: one("campus").slice(0, 160),
     batch: one("batch").slice(0, 20),
     view: pick("view", ["rekap", "detail"] as const, d.view),
-    group: pick("group", ["none", "village", "campus", "batch", "status"] as const, d.group),
+    group: pick("group", ["none", "village", "campus", "batch"] as const, d.group),
     sort: pick("sort", ["new", "old", "name"] as const, d.sort),
     stats: flag("stats", d.stats), reason: flag("reason", d.reason), proofs: flag("proofs", d.proofs),
     contact: flag("contact", d.contact), notes: flag("notes", d.notes), sign: flag("sign", d.sign), auto: flag("auto", false),
@@ -76,7 +64,6 @@ export function parseRegOptions(sp: Record<string, string | string[] | undefined
 
 export function regQuery(o: RegOptions): string {
   const q = new URLSearchParams();
-  q.set("st", o.statuses.join(","));
   if (o.from) q.set("from", o.from);
   if (o.to) q.set("to", o.to);
   if (o.village) q.set("village", o.village);
@@ -88,7 +75,6 @@ export function regQuery(o: RegOptions): string {
 }
 
 export function matchReg(r: RegLite, o: RegOptions): boolean {
-  if (!o.statuses.includes(r.status)) return false;
   const day = wibDay(r.created_at);
   if (o.from && day < o.from) return false;
   if (o.to && day > o.to) return false;

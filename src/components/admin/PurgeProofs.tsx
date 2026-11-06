@@ -3,7 +3,10 @@
 import { useState, useTransition } from "react";
 import { Trash2 } from "lucide-react";
 import { purgeOldProofs } from "@/lib/admin/actions";
+import { Button } from "@/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "./Toast";
+import { ConfirmDialog } from "./ConfirmDialog";
 
 /** Hapus bukti follow lama untuk melonggarkan penyimpanan. Dua langkah: pilih rentang → konfirmasi. */
 export default function PurgeProofs({ files }: { files: number }) {
@@ -23,22 +26,31 @@ export default function PurgeProofs({ files }: { files: number }) {
   return (
     <div className="flex flex-col gap-4 p-5 sm:flex-row sm:items-center">
       <div className="min-w-0 flex-1">
-        <p className="text-[15px]">Hapus bukti follow yang lebih lama dari</p>
-        <p className="ad-help !mt-1">Saat ini ada {files.toLocaleString("id-ID")} berkas bukti. Data pendaftar tetap ada; hanya gambarnya yang dihapus permanen. Buat laporan PDF dengan bukti terlebih dahulu.</p>
+        <p className="text-sm font-medium">Hapus bukti follow yang lebih lama dari</p>
+        <p className="mt-1 text-xs text-muted-foreground">Saat ini ada {files.toLocaleString("id-ID")} berkas bukti. Data pendaftar tetap ada; hanya gambarnya yang dihapus permanen. Buat laporan PDF dengan bukti terlebih dahulu.</p>
       </div>
       <div className="flex flex-wrap items-center gap-2">
-        <select aria-label="Rentang usia bukti" value={days} onChange={(e) => { setDays(Number(e.target.value)); setConfirm(false); }} className="ad-input !h-9 !w-auto !text-[14px]">
-          {[30, 90, 180, 365].map((d) => <option key={d} value={d}>{d} hari</option>)}
-        </select>
-        {confirm ? (
-          <>
-            <button type="button" onClick={run} disabled={pending} className="ad-btn ad-btn-danger-solid">{pending ? "Menghapus…" : "Ya, hapus permanen"}</button>
-            <button type="button" onClick={() => setConfirm(false)} disabled={pending} className="ad-btn">Batal</button>
-          </>
-        ) : (
-          <button type="button" onClick={() => setConfirm(true)} disabled={!files} className="ad-btn ad-btn-danger"><Trash2 size={15} /> Hapus bukti lama</button>
-        )}
+        <Select value={String(days)} onValueChange={(v) => setDays(Number(v))}>
+          <SelectTrigger className="w-28" aria-label="Rentang usia bukti"><SelectValue /></SelectTrigger>
+          <SelectContent>
+            {[30, 90, 180, 365].map((d) => <SelectItem key={d} value={String(d)}>{d} hari</SelectItem>)}
+          </SelectContent>
+        </Select>
+        <Button type="button" variant="outline" onClick={() => setConfirm(true)} disabled={!files} className="text-destructive hover:bg-destructive/10 hover:text-destructive">
+          <Trash2 /> Hapus bukti lama
+        </Button>
       </div>
+
+      {confirm && (
+        <ConfirmDialog
+          title="Hapus bukti lama?"
+          text={`Semua gambar bukti yang lebih tua dari ${days} hari akan dihapus permanen. Data pendaftar tetap tersimpan. Tindakan ini tidak bisa dibatalkan.`}
+          confirmLabel="Ya, hapus permanen"
+          busy={pending}
+          onConfirm={run}
+          onCancel={() => setConfirm(false)}
+        />
+      )}
     </div>
   );
 }

@@ -196,7 +196,6 @@ create table if not exists public.registrations (
   major text not null default '' check (char_length(major) <= 160),
   batch text not null default '' check (char_length(batch) <= 20),
   message text not null default '' check (char_length(message) <= 1000),
-  status text not null default 'baru' check (status in ('baru','dihubungi','diterima','ditolak')),
   note text not null default '' check (char_length(note) <= 1000),
   created_at timestamptz not null default now()
 );
@@ -297,6 +296,9 @@ $$;
 revoke all on function public.admin_usage() from public;
 grant execute on function public.admin_usage() to authenticated;
 
+-- Fungsi peta desa (dibatalkan) dibuang bila pernah dibuat.
+drop function if exists public.village_counts();
+
 create index if not exists events_date_idx on public.events (event_date);
 create index if not exists members_order_idx on public.members (order_index);
 create index if not exists members_group_idx on public.members (period, division, order_index);
@@ -334,6 +336,9 @@ end $$;
 
 -- v11: alur status verifikasi pembayaran dihapus. Kolom lama (v10) dibuang setelah policy yang memakainya terhapus.
 alter table public.registrations drop column if exists payment_status;
+-- v12: status pendaftar (baru/dihubungi/diterima/ditolak) dihapus. Setiap pendaftar otomatis menjadi anggota; data yang keliru
+-- diedit atau dihapus admin. Kolom dibuang di sini, setelah policy yang memakainya terhapus. Unduh CSV dulu bila perlu arsip status lama.
+alter table public.registrations drop column if exists status;
 
 -- Publik: hanya boleh BACA konten
 create policy "public read settings" on public.site_settings for select using (true);
@@ -361,11 +366,11 @@ create policy "admin all articles" on public.articles for all using (public.is_a
 create policy "admin all messages" on public.contact_messages for all using (public.is_admin()) with check (public.is_admin());
 create policy "admin read audit"   on public.audit_log for select using (public.is_admin());
 create policy "admin write audit"  on public.audit_log for insert with check (public.is_admin());
--- Pendaftar publik hanya boleh mengirim status "baru". Bila HTM > 0, bukti bayar wajib ada (format nama berkas UUID);
+-- Pendaftar publik tidak boleh mengisi catatan internal. Bila HTM > 0, bukti bayar wajib ada (format nama berkas UUID);
 -- bila HTM = 0, bukti bayar harus kosong.
 create policy "public register" on public.registrations for insert
   to anon, authenticated with check (
-    status = 'baru' and note = ''
+    note = ''
     and (follow_proof = '' or follow_proof ~ '^[0-9a-f-]{36}\.(jpg|jpeg|png|webp)$')
     and (
       (coalesce((select registration_fee from public.site_settings where id = 1), 0) = 0 and payment_proof = '' and fee_amount = 0)

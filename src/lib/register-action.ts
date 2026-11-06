@@ -23,7 +23,7 @@ async function currentFee(): Promise<number | null> {
   return Math.max(0, Number((data as { registration_fee?: number } | null)?.registration_fee ?? 0) || 0);
 }
 
-/** Server Action publik: pendaftaran anggota baru. Honeypot + waktu minimal + validasi; RLS hanya mengizinkan INSERT status "baru". */
+/** Server Action publik: pendaftaran anggota baru. Honeypot + waktu minimal + validasi; RLS menolak catatan internal dan bukti yang formatnya tidak sah. */
 export async function registerMember(_prev: RegisterState | undefined, formData: FormData): Promise<RegisterState> {
   const honey = String(formData.get("website") ?? "");
   const startedAt = Number(formData.get("t") ?? 0);
