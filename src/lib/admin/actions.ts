@@ -308,19 +308,7 @@ export async function saveSettings(raw: Raw): Promise<Result> {
   const name = str("name", 40);
   if (!name) return { ok: false, error: "Nama singkat organisasi wajib diisi." };
 
-  const mode = raw.registration_mode === "gform" ? "gform" : "builtin";
-  const gform = str("gform_url", 500);
-  if (gform && !isGoogleFormUrl(gform)) return { ok: false, error: "Tautan Google Form harus berupa tautan docs.google.com/forms/… atau forms.gle/…" };
-  if (mode === "gform" && !gform) return { ok: false, error: "Mode Google Form dipilih, tetapi tautan Google Form belum diisi." };
-
-  // HTM: nominal rupiah (0 = tanpa HTM). Bila ada HTM, pendaftar perlu tahu ke mana membayar.
-  const fee = parseRupiah(raw.registration_fee);
-  const payInfo = String(raw.payment_info ?? "").replace(/[ \t]+/g, " ").trim().slice(0, 600);
-  const payQr = str("payment_qr", 600);
-  if (payQr && !isHttpsUrl(payQr)) return { ok: false, error: "URL gambar QRIS tidak valid." };
-  if (fee > 0 && mode === "builtin" && !payInfo && !payQr) return { ok: false, error: "HTM sudah diisi, tetapi petunjuk pembayaran (rekening / QRIS) belum. Isi salah satunya agar pendaftar tahu ke mana membayar." };
-
-  const { data: old } = await supabase.from("site_settings").select("about_photo,payment_qr").eq("id", 1).maybeSingle();
+  const { data: old } = await supabase.from("site_settings").select("about_photo").eq("id", 1).maybeSingle();
 
   const { error } = await supabase.from("site_settings").upsert({
     id: 1,
@@ -340,6 +328,39 @@ export async function saveSettings(raw: Raw): Promise<Result> {
     history: str("history", 5000),
     founders,
     timeline,
+    updated_at: new Date().toISOString(),
+  });
+  if (error) return { ok: false, error: friendly(error) };
+
+  const oldPath = storagePathFromUrl((old as Raw | null)?.about_photo);
+  if (oldPath && (old as Raw).about_photo !== photo) await supabase.storage.from(MEDIA_BUCKET).remove([oldPath]);
+
+  await audit(supabase, email, "mengubah", "Pengaturan", "informasi organisasi");
+  revalidatePath("/", "layout");
+  return { ok: true };
+}
+
+/** Pengaturan pendaftaran anggota (buka/tutup, jenis formulir, HTM, catatan). Dikelola dari halaman Pendaftar. */
+export async function saveRegistrationSettings(raw: Raw): Promise<Result> {
+  const { supabase, email } = await requireAdmin();
+  const str = (k: string, max: number) => String(raw[k] ?? "").trim().slice(0, max);
+
+  const mode = raw.registration_mode === "gform" ? "gform" : "builtin";
+  const gform = str("gform_url", 500);
+  if (gform && !isGoogleFormUrl(gform)) return { ok: false, error: "Tautan Google Form harus berupa tautan docs.google.com/forms/… atau forms.gle/…" };
+  if (mode === "gform" && !gform) return { ok: false, error: "Mode Google Form dipilih, tetapi tautan Google Form belum diisi." };
+
+  // HTM: nominal rupiah (0 = tanpa HTM). Bila ada HTM, pendaftar perlu tahu ke mana membayar.
+  const fee = parseRupiah(raw.registration_fee);
+  const payInfo = String(raw.payment_info ?? "").replace(/[ \t]+/g, " ").trim().slice(0, 600);
+  const payQr = str("payment_qr", 600);
+  if (payQr && !isHttpsUrl(payQr)) return { ok: false, error: "URL gambar QRIS tidak valid." };
+  if (fee > 0 && mode === "builtin" && !payInfo && !payQr) return { ok: false, error: "HTM sudah diisi, tetapi petunjuk pembayaran (rekening / QRIS) belum. Isi salah satunya agar pendaftar tahu ke mana membayar." };
+
+  const { data: old } = await supabase.from("site_settings").select("payment_qr").eq("id", 1).maybeSingle();
+
+  const { error } = await supabase.from("site_settings").upsert({
+    id: 1,
     registration_open: raw.registration_open !== false && raw.registration_open !== "false",
     registration_mode: mode,
     gform_url: gform,
@@ -351,12 +372,10 @@ export async function saveSettings(raw: Raw): Promise<Result> {
   });
   if (error) return { ok: false, error: friendly(error) };
 
-  const oldPath = storagePathFromUrl((old as Raw | null)?.about_photo);
-  if (oldPath && (old as Raw).about_photo !== photo) await supabase.storage.from(MEDIA_BUCKET).remove([oldPath]);
   const oldQr = storagePathFromUrl((old as Raw | null)?.payment_qr);
   if (oldQr && (old as Raw).payment_qr !== payQr) await supabase.storage.from(MEDIA_BUCKET).remove([oldQr]);
 
-  await audit(supabase, email, "mengubah", "Pengaturan", "informasi organisasi");
+  await audit(supabase, email, "mengubah", "Pengaturan", "pendaftaran anggota");
   revalidatePath("/", "layout");
   return { ok: true };
 }

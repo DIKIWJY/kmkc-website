@@ -3,13 +3,10 @@
 import { useState } from "react";
 import { Loader2, Plus, Trash2, Save, ArrowUp, ArrowDown } from "lucide-react";
 import { saveSettings } from "@/lib/admin/actions";
-import { rupiah, parseRupiah } from "@/lib/money";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import ImageField from "./ImageField";
 import { useToast } from "./Toast";
@@ -179,54 +176,6 @@ export default function SettingsForm({ initial, children }: { initial: SiteSetti
         <F id="s-ig" label="Instagram (URL)" help="Juga dipakai sebagai tautan “Follow” di formulir pendaftaran."><Input id="s-ig" value={s.instagram} onChange={(e) => set("instagram", e.target.value)} placeholder="https://instagram.com/kmkc" /></F>
         <F id="s-tt" label="TikTok (URL)"><Input id="s-tt" value={s.tiktok} onChange={(e) => set("tiktok", e.target.value)} placeholder="https://tiktok.com/@kmkc" /></F>
         <F id="s-yt" label="YouTube (URL)"><Input id="s-yt" value={s.youtube} onChange={(e) => set("youtube", e.target.value)} placeholder="https://youtube.com/@kmkc" /></F>
-      </Group>
-
-      <Group title="Pendaftaran anggota" desc="Atur apakah /daftar menerima pendaftar, dan formulir mana yang dipakai.">
-        <div className="flex items-center justify-between gap-4 rounded-lg border px-4 py-3 sm:col-span-2">
-          <div>
-            <Label htmlFor="s-open" className="text-sm font-medium">Pendaftaran dibuka</Label>
-            <p className="mt-1 text-xs text-muted-foreground">Bila ditutup, halaman /daftar menampilkan pemberitahuan dan tidak ada formulir.</p>
-          </div>
-          <Switch id="s-open" checked={s.registration_open} onCheckedChange={(v) => set("registration_open", v)} />
-        </div>
-        <F label="Formulir yang dipakai" full>
-          <Tabs value={s.registration_mode} onValueChange={(v) => set("registration_mode", v as SiteSettings["registration_mode"])}>
-            <TabsList aria-label="Mode formulir">
-              <TabsTrigger value="builtin" className="px-3">Formulir bawaan website</TabsTrigger>
-              <TabsTrigger value="gform" className="px-3">Google Form</TabsTrigger>
-            </TabsList>
-          </Tabs>
-          <p className="text-xs text-muted-foreground">
-            {s.registration_mode === "builtin"
-              ? "Data masuk ke menu Pendaftar di dashboard ini (lengkap dengan bukti follow Instagram dan, bila ada HTM, bukti pembayaran)."
-              : "Pendaftar mengisi Google Form kamu; data tersimpan di Google Sheets, bukan di menu Pendaftar."}
-          </p>
-        </F>
-        {s.registration_mode === "gform" && (
-          <F id="s-gform" label="Tautan Google Form" full help="Salin dari Google Form → Kirim → ikon tautan. Mendukung docs.google.com/forms/… dan forms.gle/…">
-            <Input id="s-gform" value={s.gform_url} onChange={(e) => set("gform_url", e.target.value)} placeholder="https://docs.google.com/forms/d/e/…/viewform" inputMode="url" />
-          </F>
-        )}
-        {s.registration_mode === "builtin" && (
-          <>
-            <F id="s-fee" label="HTM / biaya pendaftaran (Rp)" help={s.registration_fee > 0 ? `Tampil di /daftar sebagai ${rupiah(s.registration_fee)}. Pendaftar wajib mengunggah bukti pembayaran.` : "Kosongkan atau isi 0 bila tidak ada biaya. Bila diisi, formulir meminta bukti pembayaran."}>
-              <Input
-                id="s-fee" inputMode="numeric" placeholder="Contoh: 25000" maxLength={11}
-                value={s.registration_fee ? String(s.registration_fee) : ""}
-                onChange={(e) => set("registration_fee", parseRupiah(e.target.value))}
-              />
-            </F>
-            <F id="s-pay" label="Petunjuk pembayaran" help="Nomor rekening / e-wallet beserta nama pemilik, satu per baris. Tampil di formulir bila ada HTM.">
-              <Textarea id="s-pay" rows={3} maxLength={600} value={s.payment_info} onChange={(e) => set("payment_info", e.target.value)} placeholder={"BRI 1234 5678 9012 a.n. Nama Bendahara\nDANA 0812 3456 7890 a.n. Nama Bendahara"} />
-            </F>
-            <F label="Gambar QRIS (opsional)" full help="Unggah QRIS organisasi agar pendaftar bisa membayar dengan memindai. Tampil di formulir bila ada HTM.">
-              <ImageField value={s.payment_qr} onChange={(v) => set("payment_qr", v)} folder="site" maxSize={1000} />
-            </F>
-          </>
-        )}
-        <F id="s-note" label="Catatan pendaftaran" full help="Tampil di halaman /daftar, misalnya jadwal buka atau syarat. Saat ditutup, catatan ini menjadi penjelasan utama.">
-          <Textarea id="s-note" rows={2} maxLength={300} value={s.registration_note} onChange={(e) => set("registration_note", e.target.value)} placeholder="Contoh: Pendaftaran anggota baru dibuka 1–30 September." />
-        </F>
       </Group>
 
       {children}

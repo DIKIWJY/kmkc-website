@@ -6,13 +6,27 @@ import { ChevronRight } from "lucide-react";
 import Logo from "@/components/ui/Logo";
 import { cn } from "@/lib/utils";
 import {
-  Sidebar, SidebarContent, SidebarFooter, SidebarGroup, SidebarGroupLabel, SidebarHeader, SidebarMenu, SidebarMenuBadge,
-  SidebarMenuButton, SidebarMenuItem, SidebarRail, useSidebar,
+  Sidebar,
+  SidebarContent,
+  SidebarFooter,
+  SidebarGroup,
+  SidebarGroupLabel,
+  SidebarHeader,
+  SidebarMenu,
+  SidebarMenuBadge,
+  SidebarMenuButton,
+  SidebarMenuItem,
+  SidebarRail,
+  useSidebar,
 } from "@/components/ui/sidebar";
 import { NAV, isActive } from "../nav";
 import UserMenu from "./UserMenu";
 
-interface Props { email: string; unread: number; regOpen: boolean }
+interface Props {
+  email: string;
+  unread: number;
+  regOpen: boolean;
+}
 
 export default function AppSidebar({ email, unread, regOpen }: Props) {
   const path = usePathname();
@@ -25,12 +39,18 @@ export default function AppSidebar({ email, unread, regOpen }: Props) {
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton size="lg" asChild tooltip="KMKC · Panel Admin">
-              <Link href="/admin" onClick={() => setOpenMobile(false)} aria-label="KMKC Admin, ke Dashboard">
+              <Link
+                href="/admin"
+                onClick={() => setOpenMobile(false)}
+                aria-label="KMKC Admin, ke Dashboard"
+              >
                 <span className="flex size-8 shrink-0 items-center justify-center overflow-hidden rounded-full ring-2 ring-white/15">
                   <Logo size={32} alt="" className="size-8 rounded-full" />
                 </span>
                 <div className="grid flex-1 text-start leading-tight">
-                  <span className="truncate text-sm font-semibold text-sidebar-accent-foreground">KMKC</span>
+                  <span className="truncate text-sm font-semibold text-sidebar-accent-foreground">
+                    KMKC
+                  </span>
                   <span className="truncate text-xs">Panel Admin</span>
                 </div>
               </Link>
@@ -55,7 +75,11 @@ export default function AppSidebar({ email, unread, regOpen }: Props) {
                       tooltip={it.label}
                       className="data-[active=true]:[&>svg]:text-sidebar-primary"
                     >
-                      <Link href={it.href} onClick={() => setOpenMobile(false)} aria-current={active ? "page" : undefined}>
+                      <Link
+                        href={it.href}
+                        onClick={() => setOpenMobile(false)}
+                        aria-current={active ? "page" : undefined}
+                      >
                         <it.icon />
                         <span>{it.label}</span>
                       </Link>
@@ -75,18 +99,27 @@ export default function AppSidebar({ email, unread, regOpen }: Props) {
 
       <SidebarFooter>
         <Link
-          href="/admin/pengaturan"
+                 href="/admin/pendaftar"
           onClick={() => setOpenMobile(false)}
-          aria-label={`Pendaftaran anggota ${regOpen ? "dibuka" : "ditutup"}, buka pengaturan`}
+          aria-label={`Pendaftaran anggota ${regOpen ? "dibuka" : "ditutup"}, buka halaman pendaftar`}
           className="flex items-center gap-2.5 rounded-lg bg-sidebar-accent px-3 py-2.5 text-xs transition-colors hover:bg-white/12 group-data-[collapsible=icon]:hidden"
         >
           <span className="relative flex size-2 shrink-0" aria-hidden>
-            {regOpen && <span className="absolute inline-flex size-full animate-ping rounded-full bg-emerald-400/60" />}
-            <span className={cn("relative inline-flex size-2 rounded-full", regOpen ? "bg-emerald-400" : "bg-slate-400")} />
+            {regOpen && (
+              <span className="absolute inline-flex size-full animate-ping rounded-full bg-emerald-400/60" />
+            )}
+            <span
+              className={cn(
+                "relative inline-flex size-2 rounded-full",
+                regOpen ? "bg-emerald-400" : "bg-slate-400",
+              )}
+            />
           </span>
           <span className="min-w-0 flex-1 leading-tight">
             <span className="block">Pendaftaran anggota</span>
-            <span className="block text-[13px] font-medium text-sidebar-accent-foreground">{regOpen ? "Sedang dibuka" : "Ditutup"}</span>
+            <span className="block text-[13px] font-medium text-sidebar-accent-foreground">
+              {regOpen ? "Sedang dibuka" : "Ditutup"}
+            </span>
           </span>
           <ChevronRight className="size-4 opacity-60" />
         </Link>
