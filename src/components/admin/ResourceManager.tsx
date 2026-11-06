@@ -21,7 +21,7 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Sheet, SheetContent, SheetDescription, SheetFooter, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Switch } from "@/components/ui/switch";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
@@ -451,15 +451,15 @@ function RecordForm({ resourceKey, record, onClose, onSaved }: { resourceKey: st
   const title = `${record ? "Edit" : "Tambah"} ${res.singular}`;
   return (
     <>
-      <Sheet open={open} onOpenChange={(o) => { if (!o && !saving) tryClose(); }}>
-        <SheetContent className="w-full gap-0 p-0 sm:max-w-xl" aria-describedby="sheet-desc">
+      <Dialog open={open} onOpenChange={(o) => { if (!o && !saving) tryClose(); }}>
+        <DialogContent className="flex max-h-[90dvh] flex-col gap-0 overflow-hidden p-0 sm:max-w-xl" aria-describedby="sheet-desc">
           <form onSubmit={submit} className="flex min-h-0 flex-1 flex-col">
-            <SheetHeader className="border-b px-6 py-5 pr-14">
-              <SheetTitle className="text-lg">{title}</SheetTitle>
-              <SheetDescription id="sheet-desc">
+            <DialogHeader className="border-b px-6 py-5 pr-14 text-left">
+              <DialogTitle className="text-lg">{title}</DialogTitle>
+              <DialogDescription id="sheet-desc">
                 {record ? `Ubah data ${res.singular.toLowerCase()} lalu simpan.` : `Isi data ${res.singular.toLowerCase()} baru.`} Kolom bertanda <span className="text-destructive">*</span> wajib diisi.
-              </SheetDescription>
-            </SheetHeader>
+              </DialogDescription>
+            </DialogHeader>
 
             <div className="min-h-0 flex-1 overflow-y-auto px-6 py-6">
               <div className="grid grid-cols-2 gap-x-4 gap-y-5">
@@ -482,15 +482,15 @@ function RecordForm({ resourceKey, record, onClose, onSaved }: { resourceKey: st
               )}
             </div>
 
-            <SheetFooter className="mt-0 flex-row items-center justify-end gap-2 border-t bg-card px-6 py-4">
+            <DialogFooter className="mt-0 flex-row items-center justify-end gap-2 border-t bg-card px-6 py-4">
               <Button type="button" variant="outline" onClick={tryClose} disabled={saving}>Batal</Button>
               <Button type="submit" disabled={saving} className="min-w-24">
                 {saving && <Loader2 className="animate-spin" />} Simpan
               </Button>
-            </SheetFooter>
+            </DialogFooter>
           </form>
-        </SheetContent>
-      </Sheet>
+        </DialogContent>
+      </Dialog>
 
       {confirmClose && (
         <ConfirmDialog

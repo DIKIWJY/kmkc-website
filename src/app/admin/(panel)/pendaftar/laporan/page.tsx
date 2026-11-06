@@ -14,7 +14,7 @@ export default async function Page() {
     .limit(3000);
   const rows = (data ?? []) as RegLite[];
   return (
-    <div className="max-w-3xl pb-16">
+    <div className="pb-16">
       <PageHeader title="Laporan pendaftar" subtitle="Susun laporan PDF khusus pendaftar anggota: saring, kelompokkan, lalu pilih isinya." />
       <RegistrantReportBuilder
         rows={rows}

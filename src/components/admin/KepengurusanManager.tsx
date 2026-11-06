@@ -16,7 +16,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Sheet, SheetContent, SheetDescription, SheetFooter, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import ImageField from "./ImageField";
 import { PageHeader, Card, EmptyState } from "./ui";
 import { ConfirmDialog } from "./ConfirmDialog";
@@ -36,26 +36,26 @@ function FormSheet({ title, description, onClose, onSubmit, saving, error, submi
   title: string; description?: string; onClose: () => void; onSubmit: () => void; saving: boolean; error: string; submitLabel?: string; children: React.ReactNode; small?: boolean;
 }) {
   return (
-    <Sheet open onOpenChange={(o) => { if (!o && !saving) onClose(); }}>
-      <SheetContent className={cn("w-full gap-0 p-0", small ? "sm:max-w-md" : "sm:max-w-lg")}>
+    <Dialog open onOpenChange={(o) => { if (!o && !saving) onClose(); }}>
+      <DialogContent className={cn("flex max-h-[90dvh] flex-col gap-0 overflow-hidden p-0", small ? "sm:max-w-md" : "sm:max-w-lg")}>
         <form onSubmit={(e) => { e.preventDefault(); onSubmit(); }} className="flex min-h-0 flex-1 flex-col">
-          <SheetHeader className="border-b px-6 py-5 pr-14">
-            <SheetTitle className="text-lg">{title}</SheetTitle>
-            <SheetDescription className={description ? undefined : "sr-only"}>{description ?? title}</SheetDescription>
-          </SheetHeader>
+          <DialogHeader className="border-b px-6 py-5 pr-14 text-left">
+            <DialogTitle className="text-lg">{title}</DialogTitle>
+            <DialogDescription className={description ? undefined : "sr-only"}>{description ?? title}</DialogDescription>
+          </DialogHeader>
           <div className="min-h-0 flex-1 space-y-5 overflow-y-auto px-6 py-6">
             {children}
             {error && <Alert variant="destructive" role="alert"><AlertDescription>{error}</AlertDescription></Alert>}
           </div>
-          <SheetFooter className="mt-0 flex-row items-center justify-end gap-2 border-t bg-card px-6 py-4">
+          <DialogFooter className="mt-0 flex-row items-center justify-end gap-2 border-t bg-card px-6 py-4">
             <Button type="button" variant="outline" onClick={onClose} disabled={saving}>Batal</Button>
             <Button type="submit" disabled={saving}>
               {saving && <Loader2 className="animate-spin" />} {submitLabel}
             </Button>
-          </SheetFooter>
+          </DialogFooter>
         </form>
-      </SheetContent>
-    </Sheet>
+      </DialogContent>
+    </Dialog>
   );
 }
 
@@ -119,7 +119,7 @@ export default function KepengurusanManager({ periods, divisions, members }: { p
     return (
       <div>
         <PageHeader title="Kepengurusan" subtitle="Susun kepengurusan per periode: bidang/departemen bisa ditambah, dan tiap bidang berisi pengurus dengan jabatan bebas." />
-        <Card><EmptyState icon={Users} title="Belum ada periode kepengurusan" text="Mulai dengan membuat periode, mis. 2025/2026. Susunan KMKC (Presidium + 6 departemen) bisa langsung dipakai." /></Card>
+        <Card><EmptyState icon={Users} title="Belum ada periode kepengurusan" text="Mulai dengan membuat periode, mis. 2025/2026. Susunan KMKC (Pengurus Inti + 6 departemen) bisa langsung dipakai." /></Card>
         <div className="mt-5 flex justify-center"><Button size="lg" onClick={() => setDlg({ t: "period-new" })}><Plus /> Buat periode pertama</Button></div>
         {dlg?.t === "period-new" && <PeriodNewSheet periods={[]} onClose={() => setDlg(null)} onDone={(l) => { setChosen(l); setDlg(null); refresh(); }} />}
       </div>
@@ -287,7 +287,7 @@ function PeriodNewSheet({ periods, current, onClose, onDone }: { periods: Period
   }
 
   const opts: { key: "kmkc" | "salin" | "kosong"; title: string; text: string; off?: boolean }[] = [
-    { key: "kmkc", title: ORG_PRESETS.kmkc.label, text: "Presidium, Pendidikan, PKMB, Humas, Medinfo, Kewirausahaan, Kesehatan." },
+    { key: "kmkc", title: ORG_PRESETS.kmkc.label, text: "Pengurus Inti, Pendidikan, PKMB, Humas, Medinfo, Kewirausahaan, Kesehatan." },
     { key: "salin", title: "Salin bidang dari periode lain", text: "Nama bidangnya disalin, pengurusnya dikosongkan untuk diisi orang baru.", off: periods.length === 0 },
     { key: "kosong", title: "Mulai dari kosong", text: "Tambah bidang sendiri satu per satu." },
   ];

@@ -77,7 +77,7 @@ export default function SettingsForm({ initial, children }: { initial: SiteSetti
   }
 
   return (
-    <form onSubmit={submit} className="max-w-3xl space-y-6">
+    <form onSubmit={submit} className="space-y-6 pb-2">
       <PageHeader title="Pengaturan" subtitle="Semua teks utama website diatur dari sini. Perubahan langsung tampil di website setelah disimpan." />
 
       <Group title="Identitas">
@@ -233,7 +233,7 @@ export default function SettingsForm({ initial, children }: { initial: SiteSetti
 
       {/* Bilah simpan menempel di tepi bawah layar selama formulir masih terlihat; lebarnya mengikuti konten, jadi aman saat sidebar dilipat. */}
       <div className="sticky bottom-0 z-20 -mx-4 border-t bg-background px-4 py-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8">
-        <div className="flex max-w-3xl items-center justify-end gap-4">
+        <div className="flex items-center justify-end gap-4">
           {error && <span role="alert" className="mr-auto truncate text-sm text-destructive">{error}</span>}
           <Button type="submit" disabled={saving} className="min-w-40">
             {saving ? <Loader2 className="animate-spin" /> : <Save />} Simpan perubahan

@@ -12,7 +12,7 @@ export const dynamic = "force-dynamic";
 export default async function LoginPage({ searchParams }: { searchParams: Promise<{ e?: string }> }) {
   const { e } = await searchParams;
   return (
-    <main className="grid min-h-svh bg-background lg:grid-cols-2">
+    <main className="adm adm-light grid min-h-svh bg-background text-foreground lg:grid-cols-2">
       {/* Panel merek — hanya di layar lebar */}
       <aside className="relative hidden overflow-hidden bg-sidebar text-sidebar-foreground lg:flex lg:flex-col lg:justify-between lg:p-12">
         <CempakaMark className="pointer-events-none absolute -bottom-32 -right-32 size-[38rem] text-white" />
@@ -61,7 +61,7 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
           )}
 
           <p className="mt-8 text-sm leading-relaxed text-muted-foreground">
-            Lupa kata sandi? Minta presidium mengatur ulang lewat Supabase → Authentication → Users.
+            Lupa kata sandi? Hubungi admin.
           </p>
         </div>
       </section>

@@ -7,7 +7,8 @@
    di dalam .adm, dan radius bawaan Tailwind hanya ditimpa di sini pula.
    ===================================================================== */
 
-@custom-variant dark (&:is(.dark *));
+/* Area bertanda .adm-light (mis. halaman masuk) selalu terang, walau cookie tema gelap. */
+@custom-variant dark (&:is(.dark *):not(:is(.adm-light, .adm-light *)));
 
 /* Token semantik shadcn → utilitas Tailwind (bg-background, text-foreground, bg-card, dst.).
    primary / accent / muted / border sudah didefinisikan oleh tema merek publik di globals.css;

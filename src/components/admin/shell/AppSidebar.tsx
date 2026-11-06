@@ -25,7 +25,7 @@ export default function AppSidebar({ email, unread, regOpen }: Props) {
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton size="lg" asChild tooltip="KMKC · Panel Admin">
-              <Link href="/admin" onClick={() => setOpenMobile(false)} aria-label="KMKC Admin, ke Ringkasan">
+              <Link href="/admin" onClick={() => setOpenMobile(false)} aria-label="KMKC Admin, ke Dashboard">
                 <span className="flex size-8 shrink-0 items-center justify-center overflow-hidden rounded-full ring-2 ring-white/15">
                   <Logo size={32} alt="" className="size-8 rounded-full" />
                 </span>

@@ -63,17 +63,17 @@ const m = (i: number, name: string, position: string, division: string): Member 
   id: String(i), name, position, division, photo_url: "", period: "2025/2026", order_index: i, created_at: "",
 });
 
-export const sampleDivisions: Division[] = ["Presidium", "Departemen Pendidikan", "Departemen PKMB", "Departemen Humas", "Departemen Medinfo", "Departemen Kewirausahaan", "Departemen Kesehatan"].map((name, i) => ({
+export const sampleDivisions: Division[] = ["Pengurus Inti", "Departemen Pendidikan", "Departemen PKMB", "Departemen Humas", "Departemen Medinfo", "Departemen Kewirausahaan", "Departemen Kesehatan"].map((name, i) => ({
   id: `d${i}`, period: "2025/2026", name, description: "", order_index: i + 1,
 }));
 
 export const sampleMembers: Member[] = [
-  m(1, "Nama Ketua Umum", "Ketua Umum", "Presidium"),
-  m(2, "Nama Wakil Ketua 1", "Wakil Ketua Umum 1", "Presidium"),
-  m(3, "Nama Wakil Ketua 2", "Wakil Ketua Umum 2", "Presidium"),
-  m(4, "Nama Sekretaris 1", "Sekretaris Umum 1", "Presidium"),
-  m(5, "Nama Sekretaris 2", "Sekretaris Umum 2", "Presidium"),
-  m(6, "Nama Bendahara", "Bendahara Umum", "Presidium"),
+  m(1, "Nama Ketua Umum", "Ketua Umum", "Pengurus Inti"),
+  m(2, "Nama Wakil Ketua 1", "Wakil Ketua Umum 1", "Pengurus Inti"),
+  m(3, "Nama Wakil Ketua 2", "Wakil Ketua Umum 2", "Pengurus Inti"),
+  m(4, "Nama Sekretaris 1", "Sekretaris Umum 1", "Pengurus Inti"),
+  m(5, "Nama Sekretaris 2", "Sekretaris Umum 2", "Pengurus Inti"),
+  m(6, "Nama Bendahara", "Bendahara Umum", "Pengurus Inti"),
   m(7, "Nama Ketua Departemen", "Ketua Departemen Pendidikan", "Departemen Pendidikan"),
   m(8, "Nama Ketua Departemen", "Ketua Departemen PKMB", "Departemen PKMB"),
   m(9, "Nama Ketua Departemen", "Ketua Departemen Humas", "Departemen Humas"),
@@ -90,7 +90,7 @@ export const samplePrograms: Program[] = [
   p(1, "Penyambutan Mahasiswa Baru", "Menyambut mahasiswa baru asal Cempaka: pengenalan keluarga, pendampingan awal kuliah, dan info kampus.", "users", "Hubungan Daerah & Alumni", "ongoing"),
   p(2, "Bakti Sosial Cempaka", "Kegiatan sosial dan pengabdian langsung bagi masyarakat di Kecamatan Cempaka.", "share-2", "Sosial & Pengabdian", "upcoming"),
   p(3, "Kelas Belajar Bersama", "Sesi belajar, berbagi tips kuliah, dan persiapan beasiswa antar anggota.", "book-open", "Pendidikan & Pengembangan Diri", "ongoing"),
-  p(4, "Malam Keakraban", "Acara tahunan untuk mempererat kebersamaan seluruh anggota KMKC.", "trophy", "Presidium", "upcoming"),
+  p(4, "Malam Keakraban", "Acara tahunan untuk mempererat kebersamaan seluruh anggota KMKC.", "trophy", "Pengurus Inti", "upcoming"),
 ];
 
 const g = (i: number, title: string, description: string, date: string, category: GalleryItem["category"]): GalleryItem => ({
@@ -123,7 +123,7 @@ export const sampleArticles: Article[] = [
     id: "2", title: "Pendaftaran Anggota Baru Dibuka", slug: "pendaftaran-anggota-baru",
     excerpt: "Mahasiswa asal Cempaka yang baru masuk kuliah, yuk gabung jadi bagian keluarga besar KMKC.",
     content: "Pendaftaran anggota baru KMKC resmi dibuka untuk seluruh mahasiswa asal Kecamatan Cempaka.\n\nHubungi pengurus melalui halaman kontak untuk informasi lebih lanjut.",
-    cover_image: "", author: "Presidium", category: "Pengumuman", published: true, published_at: "2026-09-20", created_at: "",
+    cover_image: "", author: "Pengurus Inti", category: "Pengumuman", published: true, published_at: "2026-09-20", created_at: "",
   },
   {
     id: "3", title: "Refleksi Kegiatan Bakti Sosial", slug: "refleksi-bakti-sosial",

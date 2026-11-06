@@ -78,7 +78,7 @@ export const RESOURCES: Record<string, Resource> = {
       { name: "photo_url", label: "Foto", type: "image", folder: "members", maxSize: 800, help: "Rasio persegi paling bagus." },
       { name: "name", label: "Nama lengkap", type: "text", required: true, max: 120 },
       { name: "position", label: "Jabatan", type: "text", required: true, half: true, placeholder: "Ketua Umum", max: 100 },
-      { name: "division", label: "Bidang / Divisi", type: "text", required: true, half: true, placeholder: "Presidium", max: 100 },
+      { name: "division", label: "Bidang / Divisi", type: "text", required: true, half: true, placeholder: "Pengurus Inti", max: 100 },
       { name: "period", label: "Periode", type: "text", half: true, placeholder: "2025/2026", max: 20 },
     ],
     columns: [

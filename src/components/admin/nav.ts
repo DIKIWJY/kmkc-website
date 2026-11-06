@@ -14,7 +14,7 @@ export interface NavGroup { title?: string; items: NavItem[] }
 
 /** Satu sumber kebenaran untuk sidebar, breadcrumb, dan pencarian cepat. Semua alamat berbahasa Indonesia. */
 export const NAV: NavGroup[] = [
-  { items: [{ href: "/admin", label: "Ringkasan", icon: LayoutDashboard }] },
+  { items: [{ href: "/admin", label: "Dashboard", icon: LayoutDashboard }] },
   {
     title: "Konten",
     items: [

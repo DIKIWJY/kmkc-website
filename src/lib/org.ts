@@ -53,9 +53,9 @@ export const currentPeriod = (org: OrgPeriod[]): OrgPeriod | undefined => org.fi
 /** Pola susunan siap pakai untuk periode baru. Bidang bisa diubah/ditambah/dihapus setelahnya. */
 export const ORG_PRESETS = {
   kmkc: {
-    label: "Susunan KMKC (Presidium + 6 departemen)",
+    label: "Susunan KMKC (Pengurus Inti + 6 departemen)",
     divisions: [
-      { name: "Presidium", description: "Pimpinan inti KMKC" },
+      { name: "Pengurus Inti", description: "Pimpinan inti KMKC" },
       { name: "Departemen Pendidikan", description: "" },
       { name: "Departemen PKMB", description: "" },
       { name: "Departemen Humas", description: "" },
@@ -65,7 +65,7 @@ export const ORG_PRESETS = {
     ],
     /** Jabatan yang biasanya ada, dipakai sebagai saran pada formulir pengurus. */
     positions: {
-      Presidium: ["Ketua Umum", "Wakil Ketua Umum 1", "Wakil Ketua Umum 2", "Sekretaris Umum 1", "Sekretaris Umum 2", "Bendahara Umum"],
+      "Pengurus Inti": ["Ketua Umum", "Wakil Ketua Umum 1", "Wakil Ketua Umum 2", "Sekretaris Umum 1", "Sekretaris Umum 2", "Bendahara Umum"],
     } as Record<string, string[]>,
   },
   kosong: { label: "Kosong (tambah bidang sendiri)", divisions: [] as { name: string; description: string }[], positions: {} as Record<string, string[]> },
@@ -73,7 +73,7 @@ export const ORG_PRESETS = {
 
 export type OrgPresetKey = keyof typeof ORG_PRESETS;
 
-/** Saran jabatan untuk sebuah bidang: Presidium → jabatan inti; departemen → "Ketua <nama departemen>" lalu "Anggota"/"Sekretaris"/"Staf". */
+/** Saran jabatan untuk sebuah bidang: Pengurus Inti → jabatan inti; departemen → "Ketua <nama departemen>" lalu "Anggota"/"Sekretaris"/"Staf". */
 export function positionSuggestions(division: string): string[] {
   const preset = ORG_PRESETS.kmkc.positions[division];
   if (preset) return preset;
