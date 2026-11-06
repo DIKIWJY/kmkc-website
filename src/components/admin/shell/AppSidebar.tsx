@@ -38,7 +38,7 @@ export default function AppSidebar({ email, unread, regOpen }: Props) {
       <SidebarHeader>
         <SidebarMenu>
           <SidebarMenuItem>
-            <SidebarMenuButton size="lg" asChild tooltip="KMKC · Panel Admin">
+            <SidebarMenuButton size="lg" asChild tooltip="KMKC · Dashboard">
               <Link
                 href="/admin"
                 onClick={() => setOpenMobile(false)}
@@ -47,12 +47,9 @@ export default function AppSidebar({ email, unread, regOpen }: Props) {
                 <span className="flex size-8 shrink-0 items-center justify-center overflow-hidden rounded-full ring-2 ring-white/15">
                   <Logo size={32} alt="" className="size-8 rounded-full" />
                 </span>
-                <div className="grid flex-1 text-start leading-tight">
-                  <span className="truncate text-sm font-semibold text-sidebar-accent-foreground">
-                    KMKC
-                  </span>
-                  <span className="truncate text-xs">Panel Admin</span>
-                </div>
+                <span className="flex-1 truncate text-start text-base font-semibold leading-tight text-sidebar-accent-foreground">
+                  KMKC
+                </span>
               </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>
@@ -99,7 +96,7 @@ export default function AppSidebar({ email, unread, regOpen }: Props) {
 
       <SidebarFooter>
         <Link
-                 href="/admin/pendaftar"
+          href="/admin/pendaftar"
           onClick={() => setOpenMobile(false)}
           aria-label={`Pendaftaran anggota ${regOpen ? "dibuka" : "ditutup"}, buka halaman pendaftar`}
           className="flex items-center gap-2.5 rounded-lg bg-sidebar-accent px-3 py-2.5 text-xs transition-colors hover:bg-white/12 group-data-[collapsible=icon]:hidden"
